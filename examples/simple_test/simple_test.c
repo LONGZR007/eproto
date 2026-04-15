@@ -1,4 +1,5 @@
 #include "eproto.h"
+#include "fixed_block_allocator.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -263,8 +264,11 @@ void* device1_thread(void* arg) {
     (void)arg;
     printf("Device 1 thread started\n");
 
-    eproto_user_functions_t user_functions = {.malloc = NULL,  // 不提供内存分配接口，使用内部固定块内存分配器
-                                              .free = NULL,  // 不提供内存释放接口，使用内部固定块内存分配器
+    // 初始化固定块内存分配器
+    fixed_block_allocator_init();
+
+    eproto_user_functions_t user_functions = {.malloc = fixed_block_alloc,  // 使用固定块内存分配器
+                                              .free = fixed_block_free,  // 使用固定块内存分配器
                                               .signal_wait = device1_signal_wait,
                                               .signal_send = device1_signal_send,
                                               .lock = mock_lock,

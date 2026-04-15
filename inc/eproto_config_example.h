@@ -40,11 +40,6 @@
 // #define EPROTO_WARNING_LOG(fmt, ...) printf(fmt, ##__VA_ARGS__)
 // #define EPROTO_ERROR_LOG(fmt, ...) printf(fmt, ##__VA_ARGS__)
 
-// 固定块内存分配器配置
-#define CONFIG_EPROTO_FIXED_BLOCK_POOLS \
-    X(32, 10)                           \
-    X(64, 100)                          \
-    X(128, 50)                          \
-    X(256, 90)
+
 
 #endif  // EPROTO_CONFIG_H
