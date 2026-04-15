@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 // 包类型名称数组
 const char* eproto_packet_type_names[] = {
@@ -873,7 +874,7 @@ uint8_t eproto_wait_for_signal(eproto_t* eproto) {
 
 // 查找所有总线下的最小超时时间戳
 static uint32_t eproto_find_min_timeout_timestamp(eproto_t* eproto) {
-    uint32_t min_timeout_timestamp = 0;
+    uint32_t min_timeout_timestamp = UINT32_MAX;
 
     for (uint8_t i = 0; i < EPROTO_MAX_BUS_COUNT; i++) {
         eproto_bus_manager_t* bus_mgr = &eproto->bus_managers[i];
@@ -883,7 +884,7 @@ static uint32_t eproto_find_min_timeout_timestamp(eproto_t* eproto) {
         // 检查当前发送节点
         if (bus_mgr->current_send_node) {
             uint32_t node_timeout = bus_mgr->current_send_node->timestamp + bus_mgr->current_send_node->timeout_ms;
-            if (min_timeout_timestamp == 0 || node_timeout < min_timeout_timestamp) {
+            if (node_timeout < min_timeout_timestamp) {
                 min_timeout_timestamp = node_timeout;
             }
         }
@@ -893,7 +894,7 @@ static uint32_t eproto_find_min_timeout_timestamp(eproto_t* eproto) {
         eproto_list_for_each(pos, &bus_mgr->device_queues.wait_queue) {
             eproto_node_t* wait_node = eproto_list_entry(pos, eproto_node_t, list);
             uint32_t node_timeout = wait_node->timestamp + wait_node->timeout_ms;
-            if (min_timeout_timestamp == 0 || node_timeout < min_timeout_timestamp) {
+            if (node_timeout < min_timeout_timestamp) {
                 min_timeout_timestamp = node_timeout;
             }
         }
