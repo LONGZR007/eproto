@@ -24,7 +24,7 @@ uint16_t eproto_ring_buffer_free(eproto_ring_buffer_t* rb) {
 }
 
 // 写入数据到环形缓冲区
-uint16_t eproto_ring_buffer_write(eproto_ring_buffer_t* rb, uint8_t* data, uint16_t length) {
+uint16_t eproto_ring_buffer_write(eproto_ring_buffer_t* rb, const uint8_t* data, uint16_t length) {
     if (!rb || !rb->buffer || !data)
         return 0;
 

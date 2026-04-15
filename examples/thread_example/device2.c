@@ -89,17 +89,17 @@ void* device2_receive_thread(void* arg) {
         // 模拟从第一条总线接收数据（总线2，连接到设备1）
         uint8_t rx_buffer1[256];
         uint16_t rx_count1 = device2_bus_receive(rx_buffer1, sizeof(rx_buffer1));
-        for (uint16_t j = 0; j < rx_count1; j++) {
+        if (rx_count1 > 0) {
             // 使用设备2自己的总线2地址0x02
-            eproto_receive_byte(&data->eproto_inst, 0x02, rx_buffer1[j]);
+            eproto_receive_data(&data->eproto_inst, 0x02, rx_buffer1, rx_count1);
         }
 
         // 模拟从第二条总线接收数据（总线3，连接到设备3）
         uint8_t rx_buffer2[256];
         uint16_t rx_count2 = device2_bus2_receive(rx_buffer2, sizeof(rx_buffer2));
-        for (uint16_t j = 0; j < rx_count2; j++) {
+        if (rx_count2 > 0) {
             // 使用设备2自己的总线3地址0x03
-            eproto_receive_byte(&data->eproto_inst, 0x03, rx_buffer2[j]);
+            eproto_receive_data(&data->eproto_inst, 0x03, rx_buffer2, rx_count2);
         }
         usleep(50000);
     }

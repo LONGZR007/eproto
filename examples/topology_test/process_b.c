@@ -197,10 +197,7 @@ void* receive_thread_a(void* arg) {
             }
             printf("\n");
 
-            for (int i = 0; i < received; i++) {
-                eproto_receive_byte(&g_eproto, 0x03,
-                                    rx_buffer[i]);  // 总线3接收来自A的数据
-            }
+            eproto_receive_data(&g_eproto, 0x03, rx_buffer, received);  // 总线3接收来自A的数据
         }
         usleep(10000);
     }
@@ -220,10 +217,7 @@ void* receive_thread_c(void* arg) {
             }
             printf("\n");
 
-            for (int i = 0; i < received; i++) {
-                eproto_receive_byte(&g_eproto, 0x04,
-                                    rx_buffer[i]);  // 总线4接收来自C的数据
-            }
+            eproto_receive_data(&g_eproto, 0x04, rx_buffer, received);  // 总线4接收来自C的数据
         }
         usleep(10000);
     }
@@ -243,10 +237,7 @@ void* receive_thread_e(void* arg) {
             }
             printf("\n");
 
-            for (int i = 0; i < received; i++) {
-                eproto_receive_byte(&g_eproto, 0x05,
-                                    rx_buffer[i]);  // 总线5接收来自E的数据
-            }
+            eproto_receive_data(&g_eproto, 0x05, rx_buffer, received);  // 总线5接收来自E的数据
         }
         usleep(10000);
     }

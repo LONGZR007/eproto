@@ -18,6 +18,7 @@ static uint16_t g_shared_buffer2_head = 0;
 static uint16_t g_shared_buffer2_tail = 0;
 static pthread_mutex_t g_mutex1 = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_mutex2 = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_eproto_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static eproto_t* g_device1_eproto = NULL;
 static eproto_t* g_device2_eproto = NULL;
@@ -41,9 +42,11 @@ uint32_t mock_get_timestamp(void) {
 }
 
 void mock_lock(void) {
+    pthread_mutex_lock(&g_eproto_lock);
 }
 
 void mock_unlock(void) {
+    pthread_mutex_unlock(&g_eproto_lock);
 }
 
 void mock_wakeup(void) {
@@ -317,8 +320,8 @@ void* device1_thread(void* arg) {
     for (int i = 0; i < 30; i++) {
         uint8_t rx_buffer[256];
         uint16_t rx_count = device1_bus_receive(rx_buffer, sizeof(rx_buffer));
-        for (uint16_t j = 0; j < rx_count; j++) {
-            eproto_receive_byte(&device1_eproto, 0x01, rx_buffer[j]);
+        if (rx_count > 0) {
+            eproto_receive_data(&device1_eproto, 0x01, rx_buffer, rx_count);
         }
         eproto_tick(&device1_eproto);
         usleep(50000);
@@ -371,8 +374,8 @@ void* device2_thread(void* arg) {
     for (int i = 0; i < 30; i++) {
         uint8_t rx_buffer[256];
         uint16_t rx_count = device2_bus_receive(rx_buffer, sizeof(rx_buffer));
-        for (uint16_t j = 0; j < rx_count; j++) {
-            eproto_receive_byte(&device2_eproto, 0x02, rx_buffer[j]);
+        if (rx_count > 0) {
+            eproto_receive_data(&device2_eproto, 0x02, rx_buffer, rx_count);
         }
         eproto_tick(&device2_eproto);
         usleep(50000);

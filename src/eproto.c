@@ -847,12 +847,12 @@ static void eproto_process_received_data(eproto_t* eproto) {
 
 // 接收数据处理（由中断或轮询调用）
 // bus_address: 总线地址
-void eproto_receive_byte(eproto_t* eproto, uint8_t bus_address, uint8_t byte) {
-    if (!eproto)
+void eproto_receive_data(eproto_t* eproto, uint8_t bus_address, const uint8_t* data, size_t len) {
+    if (!eproto || !data || len == 0)
         return;
     eproto_bus_manager_t* bus_mgr = eproto_find_bus_by_address(eproto, bus_address);
     if (bus_mgr) {
-        eproto_ring_buffer_write(&bus_mgr->rx_buffer, &byte, 1);
+        eproto_ring_buffer_write(&bus_mgr->rx_buffer, data, len);
 
         // 调用用户提供的发送信号接口（如果有）
         if (eproto->user_functions.signal_send) {

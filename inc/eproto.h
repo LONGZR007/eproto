@@ -252,9 +252,10 @@ eproto_error_t eproto_handshake(eproto_t* eproto, uint8_t bus_address);
  * 接收数据处理（由中断或轮询调用）
  * @param eproto       指向eProto实例的指针
  * @param bus_address  总线地址
- * @param byte         接收到的字节数据
+ * @param data         接收到的数据指针
+ * @param len          接收到的数据长度
  */
-void eproto_receive_byte(eproto_t* eproto, uint8_t bus_address, uint8_t byte);
+void eproto_receive_data(eproto_t* eproto, uint8_t bus_address, const uint8_t* data, size_t len);
 
 /**
  * 等待信号

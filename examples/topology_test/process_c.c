@@ -184,10 +184,7 @@ void* receive_thread_b(void* arg) {
             }
             printf("\n");
 
-            for (int i = 0; i < received; i++) {
-                eproto_receive_byte(&g_eproto, 0x06,
-                                    rx_buffer[i]);  // 总线6接收来自B的数据
-            }
+            eproto_receive_data(&g_eproto, 0x06, rx_buffer, received);  // 总线6接收来自B的数据
         }
         usleep(10000);
     }
@@ -207,10 +204,7 @@ void* receive_thread_d(void* arg) {
             }
             printf("\n");
 
-            for (int i = 0; i < received; i++) {
-                eproto_receive_byte(&g_eproto, 0x07,
-                                    rx_buffer[i]);  // 总线7接收来自D的数据
-            }
+            eproto_receive_data(&g_eproto, 0x07, rx_buffer, received);  // 总线7接收来自D的数据
         }
         usleep(10000);
     }

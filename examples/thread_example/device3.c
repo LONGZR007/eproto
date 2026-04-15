@@ -103,9 +103,9 @@ void* device3_receive_thread(void* arg) {
         // 模拟从总线接收数据
         uint8_t rx_buffer[256];
         uint16_t rx_count = device3_bus_receive(rx_buffer, sizeof(rx_buffer));
-        for (uint16_t j = 0; j < rx_count; j++) {
+        if (rx_count > 0) {
             // 使用设备3自己的总线4地址0x04
-            eproto_receive_byte(&data->eproto_inst, 0x04, rx_buffer[j]);
+            eproto_receive_data(&data->eproto_inst, 0x04, rx_buffer, rx_count);
         }
         usleep(50000);
     }

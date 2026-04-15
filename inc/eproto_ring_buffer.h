@@ -14,7 +14,7 @@ typedef struct {
 
 // 环形缓冲区操作函数
 void eproto_ring_buffer_init(eproto_ring_buffer_t* rb, uint8_t* buffer, uint16_t size);
-uint16_t eproto_ring_buffer_write(eproto_ring_buffer_t* rb, uint8_t* data, uint16_t length);
+uint16_t eproto_ring_buffer_write(eproto_ring_buffer_t* rb, const uint8_t* data, uint16_t length);
 uint16_t eproto_ring_buffer_read(eproto_ring_buffer_t* rb, uint8_t* buffer, uint16_t size);
 uint16_t eproto_ring_buffer_available(eproto_ring_buffer_t* rb);
 uint16_t eproto_ring_buffer_free(eproto_ring_buffer_t* rb);
