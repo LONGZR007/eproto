@@ -11,7 +11,7 @@ INC_DIR = ../../inc
 BUILD_DIR = build
 
 # eProto 核心源文件
-EPROTO_SRCS = eproto.c eproto_crc16.c eproto_packet_node.c eproto_ring_buffer.c eproto_frame_parser.c eproto_fixed_block_allocator.c
+EPROTO_SRCS = eproto.c eproto_crc16.c eproto_packet_node.c eproto_ring_buffer.c eproto_frame_parser.c
 EPROTO_OBJS = $(addprefix $(BUILD_DIR)/, $(EPROTO_SRCS:.c=.o))
 
 # 本地源文件
