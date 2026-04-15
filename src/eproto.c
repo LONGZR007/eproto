@@ -516,8 +516,15 @@ static void eproto_send_normal_packet(eproto_t* eproto, eproto_bus_manager_t* bu
     send_node->timestamp = eproto->user_functions.get_timestamp();
     send_node->retry_count = 0;
 
-    // 设置为当前发送节点
-    bus_mgr->current_send_node = send_node;
+    // 如果重发次数和超时时间都是0，不需要设置为当前发送节点
+    // 因为不需要进行重发和超时检查
+    if (send_node->max_retry_count > 0 || send_node->timeout_ms > 0) {
+        // 设置为当前发送节点
+        bus_mgr->current_send_node = send_node;
+    } else {
+        // 不需要重发和超时检查，直接释放节点
+        eproto_packet_node_destroy(eproto->user_functions.free, send_node);
+    }
 }
 
 // 处理发送队列
