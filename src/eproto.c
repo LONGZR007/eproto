@@ -524,6 +524,11 @@ static void eproto_send_normal_packet(eproto_t* eproto, eproto_bus_manager_t* bu
     } else {
         // 不需要重发和超时检查，直接释放节点
         eproto_packet_node_destroy(eproto->user_functions.free, send_node);
+        
+        // 发送信号以便继续检查发送队列中的下一个包
+        if (eproto->user_functions.signal_send) {
+            eproto->user_functions.signal_send();
+        }
     }
 }
 
