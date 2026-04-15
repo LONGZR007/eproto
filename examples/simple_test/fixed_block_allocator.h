@@ -3,6 +3,19 @@
 
 #include <stddef.h>
 
+// 内存操作锁宏定义
+// 多线程环境下，用户应该定义这些宏来提供线程安全的锁机制
+// 例如：
+// #define FIXED_BLOCK_LOCK()   pthread_mutex_lock(&g_allocator_lock)
+// #define FIXED_BLOCK_UNLOCK() pthread_mutex_unlock(&g_allocator_lock)
+#ifndef FIXED_BLOCK_LOCK
+#define FIXED_BLOCK_LOCK()   /* 默认空实现，多线程环境下必须定义 */
+#endif
+
+#ifndef FIXED_BLOCK_UNLOCK
+#define FIXED_BLOCK_UNLOCK() /* 默认空实现，多线程环境下必须定义 */
+#endif
+
 // 内存块结构
 typedef struct fixed_block {
     struct fixed_block *next;  // 指向下一个空闲内存块

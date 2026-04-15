@@ -93,8 +93,19 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
             frame->packet_type, 0, 0);  // 转发包不重发，无超时
 
         if (forward_node) {
+            // 加锁保护发送队列操作
+            if (eproto->user_functions.lock) {
+                eproto->user_functions.lock();
+            }
+
             // 添加到目标总线的发送队列
             eproto_packet_node_add(&destination_bus_mgr->device_queues.send_queue, forward_node);
+
+            // 解锁
+            if (eproto->user_functions.unlock) {
+                eproto->user_functions.unlock();
+            }
+
             EPROTO_INFO_LOG("%s: Forwarded packet successfully\n", EPROTO_BUS_NAME(current_bus_mgr));
         } else {
             EPROTO_ERROR_LOG("%s: Failed to create forward node\n", EPROTO_BUS_NAME(current_bus_mgr));
@@ -189,9 +200,19 @@ void eproto_destroy(eproto_t* eproto) {
 
     // 销毁设备队列（不释放用户提供的缓冲区，由用户自己负责）
     for (uint8_t i = 0; i < EPROTO_MAX_BUS_COUNT; i++) {
+        // 加锁保护发送队列操作
+        if (eproto->user_functions.lock) {
+            eproto->user_functions.lock();
+        }
+
         // 销毁设备队列
         eproto_packet_node_destroy_all(eproto->user_functions.free, &eproto->bus_managers[i].device_queues.send_queue);
         eproto_packet_node_destroy_all(eproto->user_functions.free, &eproto->bus_managers[i].device_queues.wait_queue);
+
+        // 解锁
+        if (eproto->user_functions.unlock) {
+            eproto->user_functions.unlock();
+        }
     }
 }
 
@@ -277,8 +298,18 @@ eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t bus_address, uint8_t* da
     if (!node)
         return EPROTO_ERROR_BUFFER_FULL;
 
+    // 加锁保护发送队列操作
+    if (eproto->user_functions.lock) {
+        eproto->user_functions.lock();
+    }
+
     // 添加用户包到发送队列
     eproto_packet_node_add(&bus_mgr->device_queues.send_queue, node);
+
+    // 解锁
+    if (eproto->user_functions.unlock) {
+        eproto->user_functions.unlock();
+    }
 
     // 调用用户提供的发送信号接口（如果有）
     if (eproto->user_functions.signal_send) {
@@ -332,8 +363,18 @@ eproto_error_t eproto_send_user_reply_ex(eproto_t* eproto, uint8_t bus_address, 
     if (!node)
         return EPROTO_ERROR_BUFFER_FULL;
 
+    // 加锁保护发送队列操作
+    if (eproto->user_functions.lock) {
+        eproto->user_functions.lock();
+    }
+
     // 添加到对应设备的发送队列
     eproto_packet_node_add(&bus_mgr->device_queues.send_queue, node);
+
+    // 解锁
+    if (eproto->user_functions.unlock) {
+        eproto->user_functions.unlock();
+    }
 
     // 调用用户提供的发送信号接口（如果有）
     if (eproto->user_functions.signal_send) {
@@ -441,8 +482,19 @@ static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t*
 
 // 发送普通数据包
 static void eproto_send_normal_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr) {
+    // 加锁保护发送队列操作
+    if (eproto->user_functions.lock) {
+        eproto->user_functions.lock();
+    }
+
     // 取出第一个节点发送
     eproto_node_t* send_node = eproto_packet_node_remove_first(&bus_mgr->device_queues.send_queue);
+
+    // 解锁
+    if (eproto->user_functions.unlock) {
+        eproto->user_functions.unlock();
+    }
+
     if (!send_node)
         return;
 
@@ -485,8 +537,20 @@ static void eproto_process_send_queue(eproto_t* eproto) {
             }
         }
 
+        // 加锁保护发送队列检查
+        int queue_is_empty = 1;
+        if (eproto->user_functions.lock) {
+            eproto->user_functions.lock();
+        }
+
         // 检查发送队列
-        if (&bus_mgr->device_queues.send_queue == bus_mgr->device_queues.send_queue.next)
+        queue_is_empty = (&bus_mgr->device_queues.send_queue == bus_mgr->device_queues.send_queue.next);
+
+        if (eproto->user_functions.unlock) {
+            eproto->user_functions.unlock();
+        }
+
+        if (queue_is_empty)
             continue;
 
         // 检查是否需要握手
@@ -916,8 +980,18 @@ eproto_error_t eproto_handshake(eproto_t* eproto, uint8_t bus_address) {
         return EPROTO_ERROR_BUFFER_FULL;
     }
 
+    // 加锁保护发送队列操作
+    if (eproto->user_functions.lock) {
+        eproto->user_functions.lock();
+    }
+
     // 添加到发送队列
     eproto_packet_node_add(&bus_mgr->device_queues.send_queue, handshake_node);
+
+    // 解锁
+    if (eproto->user_functions.unlock) {
+        eproto->user_functions.unlock();
+    }
 
     EPROTO_INFO_LOG("%s: Handshake node added to send queue\n", EPROTO_BUS_NAME(bus_mgr));
 

@@ -34,8 +34,13 @@ static int g_initialized = 0;
 
 // 内存分配器初始化函数
 void fixed_block_allocator_init(void) {
+    // 加锁保护
+    FIXED_BLOCK_LOCK();
+    
     // 检查是否已经初始化
     if (g_initialized) {
+        // 解锁
+        FIXED_BLOCK_UNLOCK();
         return;
     }
     
@@ -62,12 +67,19 @@ void fixed_block_allocator_init(void) {
     
     // 标记初始化完成
     g_initialized = 1;
+    
+    // 解锁
+    FIXED_BLOCK_UNLOCK();
 }
 
 // 内存分配函数
 void *fixed_block_alloc(size_t size) {
+    // 加锁保护
+    FIXED_BLOCK_LOCK();
+    
     // 找到合适的内存池
     size_t pool_index = 0;
+    void *result = NULL;
     while (pool_index < g_fixed_block_allocator.pool_count) {
         fixed_block_pool_t *pool = &g_fixed_block_allocator.pools[pool_index];
         if (pool->block_size >= size) {
@@ -84,14 +96,18 @@ void *fixed_block_alloc(size_t size) {
                 }
                 
                 // 返回内存块的指针（跳过 fixed_block_t 头）
-                return (void *)(block + 1);
+                result = (void *)(block + 1);
+                break;
             }
         }
         pool_index++;
     }
     
+    // 解锁
+    FIXED_BLOCK_UNLOCK();
+    
     // 没有找到合适的内存池
-    return NULL;
+    return result;
 }
 
 // 内存释放函数
@@ -99,6 +115,9 @@ void fixed_block_free(void *ptr) {
     if (!ptr) {
         return;
     }
+    
+    // 加锁保护
+    FIXED_BLOCK_LOCK();
     
     // 找到内存块的头部
     fixed_block_t *block = (fixed_block_t *)ptr - 1;
@@ -119,14 +138,23 @@ void fixed_block_free(void *ptr) {
             break;
         }
     }
+    
+    // 解锁
+    FIXED_BLOCK_UNLOCK();
 }
 
 // 内存使用统计函数
 void fixed_block_allocator_stats(void) {
+    // 加锁保护
+    FIXED_BLOCK_LOCK();
+    
     printf("Fixed Block Allocator Stats:\n");
     for (size_t i = 0; i < g_fixed_block_allocator.pool_count; i++) {
         fixed_block_pool_t *pool = &g_fixed_block_allocator.pools[i];
         printf("Pool size: %zu bytes, Total blocks: %zu, Used blocks: %zu, Max used: %zu\n",
                pool->block_size, pool->block_count, pool->used_count, pool->max_used_count);
     }
+    
+    // 解锁
+    FIXED_BLOCK_UNLOCK();
 }
