@@ -1,9 +1,9 @@
 #include "eproto.h"
-#include "crc16.h"
-#include "packet_node.h"
-#include "ring_buffer.h"
-#include "frame_parser.h"
-#include "fixed_block_allocator.h"
+#include "eproto_crc16.h"
+#include "eproto_packet_node.h"
+#include "eproto_ring_buffer.h"
+#include "eproto_frame_parser.h"
+#include "eproto_fixed_block_allocator.h"
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
@@ -57,7 +57,7 @@ static eproto_error_t eproto_send_frame(eproto_t* eproto, eproto_bus_manager_t* 
         return EPROTO_ERROR_BUFFER_FULL;
     }
 
-    uint16_t frame_length = frame_parser_pack_frame(send_buffer, buffer_size, EPROTO_FRAME_HEADER, source_address,
+    uint16_t frame_length = eproto_frame_parser_pack_frame(send_buffer, buffer_size, EPROTO_FRAME_HEADER, source_address,
                                                     destination_address, packet_id, packet_type, data, length);
 
     if (frame_length == 0) {
@@ -87,14 +87,14 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
 
         // 创建新的数据包节点，保持原始信息不变
         eproto_node_t* forward_node =
-            packet_node_create(eproto->user_functions.malloc, eproto->user_functions.free, frame->source_address,
+            eproto_packet_node_create(eproto->user_functions.malloc, eproto->user_functions.free, frame->source_address,
                                frame->destination_address, frame->packet_id, frame->data, frame->length, NULL, NULL,
                                1,                          // no_wait - 转发包不需要等待回调
                                frame->packet_type, 0, 0);  // 转发包不重发，无超时
 
         if (forward_node) {
             // 添加到目标总线的发送队列
-            packet_node_add(&destination_bus_mgr->device_queues.send_queue, forward_node);
+            eproto_packet_node_add(&destination_bus_mgr->device_queues.send_queue, forward_node);
             EPROTO_INFO_LOG("%s: Forwarded packet successfully\n", EPROTO_BUS_NAME(current_bus_mgr));
         } else {
             EPROTO_ERROR_LOG("%s: Failed to create forward node\n", EPROTO_BUS_NAME(current_bus_mgr));
@@ -131,12 +131,12 @@ static void eproto_forward_protocol_ack(eproto_t* eproto, eproto_bus_manager_t* 
 
 // 内部内存分配函数
 static void* eproto_internal_malloc(size_t size) {
-    return fixed_block_alloc(size);
+    return eproto_fixed_block_alloc(size);
 }
 
 // 内部内存释放函数
 static void eproto_internal_free(void* ptr) {
-    fixed_block_free(ptr);
+    eproto_fixed_block_free(ptr);
 }
 
 // 初始化函数
@@ -155,7 +155,7 @@ eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_funct
     // 检查内存分配接口，如果没有提供，使用内部的固定块内存分配器
     if (!eproto->user_functions.malloc || !eproto->user_functions.free) {
         // 初始化固定块内存分配器
-        fixed_block_allocator_init();
+        eproto_fixed_block_allocator_init();
         // 使用内部内存分配函数
         eproto->user_functions.malloc = eproto_internal_malloc;
         eproto->user_functions.free = eproto_internal_free;
@@ -185,10 +185,10 @@ eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_funct
         eproto->bus_managers[i].destination_device_count = 0;
 
         // 初始化环形缓冲区
-        ring_buffer_init(&eproto->bus_managers[i].rx_buffer, NULL, 0);
+        eproto_ring_buffer_init(&eproto->bus_managers[i].rx_buffer, NULL, 0);
         // 初始化设备队列
-        INIT_LIST_HEAD(&eproto->bus_managers[i].device_queues.send_queue);
-        INIT_LIST_HEAD(&eproto->bus_managers[i].device_queues.wait_queue);
+        EPROTO_INIT_LIST_HEAD(&eproto->bus_managers[i].device_queues.send_queue);
+        EPROTO_INIT_LIST_HEAD(&eproto->bus_managers[i].device_queues.wait_queue);
     }
 
     return EPROTO_OK;
@@ -202,8 +202,8 @@ void eproto_destroy(eproto_t* eproto) {
     // 销毁设备队列（不释放用户提供的缓冲区，由用户自己负责）
     for (uint8_t i = 0; i < EPROTO_MAX_BUS_COUNT; i++) {
         // 销毁设备队列
-        packet_node_destroy_all(eproto->user_functions.free, &eproto->bus_managers[i].device_queues.send_queue);
-        packet_node_destroy_all(eproto->user_functions.free, &eproto->bus_managers[i].device_queues.wait_queue);
+        eproto_packet_node_destroy_all(eproto->user_functions.free, &eproto->bus_managers[i].device_queues.send_queue);
+        eproto_packet_node_destroy_all(eproto->user_functions.free, &eproto->bus_managers[i].device_queues.wait_queue);
     }
 }
 
@@ -243,18 +243,18 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus
     // 初始化接收缓冲区（必须由用户提供）
     eproto->bus_managers[manager_index].rx_buffer_addr = rx_buffer;
     eproto->bus_managers[manager_index].rx_buffer_size = rx_buffer_size;
-    ring_buffer_init(&eproto->bus_managers[manager_index].rx_buffer, rx_buffer, rx_buffer_size);
+    eproto_ring_buffer_init(&eproto->bus_managers[manager_index].rx_buffer, rx_buffer, rx_buffer_size);
 
     // 初始化帧解析器
-    frame_parser_config_t parser_config;
+    eproto_frame_parser_config_t parser_config;
     parser_config.frame_header = EPROTO_FRAME_HEADER;
     parser_config.max_frame_length = EPROTO_FRAME_HEADER_LENGTH + EPROTO_MAX_PACKET_LENGTH;
-    frame_parser_init(&eproto->bus_managers[manager_index].parser, &parser_config, eproto->user_functions.malloc,
+    eproto_frame_parser_init(&eproto->bus_managers[manager_index].parser, &parser_config, eproto->user_functions.malloc,
                       eproto->user_functions.free);
 
     // 初始化设备队列
-    INIT_LIST_HEAD(&eproto->bus_managers[manager_index].device_queues.send_queue);
-    INIT_LIST_HEAD(&eproto->bus_managers[manager_index].device_queues.wait_queue);
+    EPROTO_INIT_LIST_HEAD(&eproto->bus_managers[manager_index].device_queues.send_queue);
+    EPROTO_INIT_LIST_HEAD(&eproto->bus_managers[manager_index].device_queues.wait_queue);
 
     // 初始化总线需要握手
     eproto->bus_managers[manager_index].handshake_required = 1;
@@ -265,7 +265,7 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus
 
 // 主动发送数据接口（扩展）
 eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t bus_address, uint8_t* data, uint16_t length,
-                              packet_callback_t callback, void* private_data, uint8_t no_wait, uint8_t max_retry_count,
+                              eproto_packet_callback_t callback, void* private_data, uint8_t no_wait, uint8_t max_retry_count,
                               uint32_t timeout_ms) {
     if (!eproto)
         return EPROTO_ERROR_INVALID_FRAME;
@@ -283,14 +283,14 @@ eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t bus_address, uint8_t* da
         bus_mgr->next_packet_id = 1;  // 避免0值
 
     // 创建用户包节点
-    eproto_node_t* node = packet_node_create(
+    eproto_node_t* node = eproto_packet_node_create(
         eproto->user_functions.malloc, eproto->user_functions.free, bus_mgr->self_address, bus_address, packet_id, data,
         length, callback, private_data, no_wait, EPROTO_PACKET_TYPE_USER_SEND, max_retry_count, timeout_ms);
     if (!node)
         return EPROTO_ERROR_BUFFER_FULL;
 
     // 添加用户包到发送队列
-    packet_node_add(&bus_mgr->device_queues.send_queue, node);
+    eproto_packet_node_add(&bus_mgr->device_queues.send_queue, node);
 
     // 调用用户提供的发送信号接口（如果有）
     if (eproto->user_functions.signal_send) {
@@ -302,7 +302,7 @@ eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t bus_address, uint8_t* da
 
 // 主动发送数据接口
 eproto_error_t eproto_send(eproto_t* eproto, uint8_t bus_address, uint8_t* data, uint16_t length,
-                           packet_callback_t callback, void* private_data, uint8_t no_wait) {
+                           eproto_packet_callback_t callback, void* private_data, uint8_t no_wait) {
     return eproto_send_ex(eproto, bus_address, data, length, callback, private_data, no_wait,
                           EPROTO_DEFAULT_MAX_RETRY_COUNT, EPROTO_DEFAULT_RETRY_TIMEOUT_MS);
 }
@@ -338,14 +338,14 @@ eproto_error_t eproto_send_user_reply_ex(eproto_t* eproto, uint8_t bus_address, 
         return EPROTO_ERROR_ROUTE_NOT_FOUND;
 
     // 创建链表节点（没有回调，不需要等待）
-    eproto_node_t* node = packet_node_create(eproto->user_functions.malloc, eproto->user_functions.free,
+    eproto_node_t* node = eproto_packet_node_create(eproto->user_functions.malloc, eproto->user_functions.free,
                                              bus_mgr->self_address, bus_address, packet_id, data, length, NULL, NULL, 1,
                                              EPROTO_PACKET_TYPE_USER_REPLY, max_retry_count, timeout_ms);
     if (!node)
         return EPROTO_ERROR_BUFFER_FULL;
 
     // 添加到对应设备的发送队列
-    packet_node_add(&bus_mgr->device_queues.send_queue, node);
+    eproto_packet_node_add(&bus_mgr->device_queues.send_queue, node);
 
     // 调用用户提供的发送信号接口（如果有）
     if (eproto->user_functions.signal_send) {
@@ -390,7 +390,7 @@ static bool eproto_handle_retransmit(eproto_t* eproto, eproto_bus_manager_t* bus
                 bus_mgr->current_send_node->callback(EPROTO_SEND_TIMEOUT, bus_mgr->current_send_node->packet_id,
                                                      NULL, 0, bus_mgr->current_send_node->private_data);
             }
-            packet_node_destroy(eproto->user_functions.free, bus_mgr->current_send_node);
+            eproto_packet_node_destroy(eproto->user_functions.free, bus_mgr->current_send_node);
             bus_mgr->current_send_node = NULL;
             return false; // 继续处理该总线
         }
@@ -423,7 +423,7 @@ static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t*
 
     // 创建握手包节点（使用握手标志）
     uint8_t handshake_packet_type = EPROTO_PACKET_TYPE_USER_SEND | EPROTO_PACKET_TYPE_HANDSHAKE_FLAG;
-    eproto_node_t* handshake_node = packet_node_create(
+    eproto_node_t* handshake_node = eproto_packet_node_create(
         eproto->user_functions.malloc, eproto->user_functions.free, bus_mgr->self_address,
         bus_mgr->destination_devices[0], handshake_packet_id, NULL, 0, NULL, NULL, 1, handshake_packet_type,
         EPROTO_HANDSHAKE_MAX_RETRY_COUNT, EPROTO_HANDSHAKE_TIMEOUT_MS);
@@ -446,7 +446,7 @@ static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t*
     } else {
         // 发送失败，销毁握手节点
         EPROTO_ERROR_LOG("%s: Failed to send handshake packet\n", EPROTO_BUS_NAME(bus_mgr));
-        packet_node_destroy(eproto->user_functions.free, handshake_node);
+        eproto_packet_node_destroy(eproto->user_functions.free, handshake_node);
     }
 
     return true; // 继续处理其他总线
@@ -455,7 +455,7 @@ static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t*
 // 发送普通数据包
 static void eproto_send_normal_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr) {
     // 取出第一个节点发送
-    eproto_node_t* send_node = packet_node_remove_first(&bus_mgr->device_queues.send_queue);
+    eproto_node_t* send_node = eproto_packet_node_remove_first(&bus_mgr->device_queues.send_queue);
     if (!send_node)
         return;
 
@@ -468,7 +468,7 @@ static void eproto_send_normal_packet(eproto_t* eproto, eproto_bus_manager_t* bu
         if (send_node->callback) {
             send_node->callback(EPROTO_SEND_ERROR, send_node->packet_id, NULL, 0, send_node->private_data);
         }
-        packet_node_destroy(eproto->user_functions.free, send_node);
+        eproto_packet_node_destroy(eproto->user_functions.free, send_node);
         return;
     }
 
@@ -530,11 +530,11 @@ static void eproto_process_wait_queue(eproto_t* eproto) {
             continue;
 
         uint32_t current_time = eproto->user_functions.get_timestamp();
-        struct list_head *pos, *n;
+        struct eproto_list_head *pos, *n;
         eproto_node_t* node;
 
-        list_for_each_safe(pos, n, &bus_mgr->device_queues.wait_queue) {
-            node = list_entry(pos, eproto_node_t, list);
+        eproto_list_for_each_safe(pos, n, &bus_mgr->device_queues.wait_queue) {
+            node = eproto_list_entry(pos, eproto_node_t, list);
 
             // 检查是否超时
             if (current_time - node->timestamp > node->timeout_ms) {
@@ -544,9 +544,9 @@ static void eproto_process_wait_queue(eproto_t* eproto) {
                 }
 
                 // 从链表中删除节点
-                list_del(pos);
+                eproto_list_del(pos);
                 // 销毁节点
-                packet_node_destroy(eproto->user_functions.free, node);
+                eproto_packet_node_destroy(eproto->user_functions.free, node);
             }
         }
     }
@@ -628,13 +628,13 @@ static void eproto_process_protocol_ack_packet(eproto_t* eproto, eproto_bus_mana
                 bus_mgr->status_callback(EPROTO_STATUS_HANDSHAKE_SUCCESS, NULL, 0);
             }
             // 销毁握手节点
-            packet_node_destroy(eproto->user_functions.free, node);
+            eproto_packet_node_destroy(eproto->user_functions.free, node);
         } else {
             // 判断用户是否需要回复包
             if (!node->no_wait) {
                 // 用户需要回复，放入等待队列
                 EPROTO_INFO_LOG("%s: User needs reply, adding to wait queue\n", EPROTO_BUS_NAME(bus_mgr));
-                packet_node_add(&bus_mgr->device_queues.wait_queue, node);
+                eproto_packet_node_add(&bus_mgr->device_queues.wait_queue, node);
             } else {
                 // 用户不需要回复，直接调用回调
                 EPROTO_INFO_LOG(
@@ -645,7 +645,7 @@ static void eproto_process_protocol_ack_packet(eproto_t* eproto, eproto_bus_mana
                     node->callback(EPROTO_SEND_SUCCESS, node->packet_id, frame->data, frame->length,
                                    node->private_data);
                 }
-                packet_node_destroy(eproto->user_functions.free, node);
+                eproto_packet_node_destroy(eproto->user_functions.free, node);
             }
         }
 
@@ -661,7 +661,7 @@ static void eproto_process_user_reply_packet(eproto_t* eproto, eproto_bus_manage
     eproto_send_response(eproto, frame->source_address, frame->packet_id, NULL, 0, EPROTO_PACKET_TYPE_PROTOCOL_ACK);
 
     // 从等待队列中移除
-    eproto_node_t* reply_node = packet_node_remove(&bus_mgr->device_queues.wait_queue, frame->packet_id);
+    eproto_node_t* reply_node = eproto_packet_node_remove(&bus_mgr->device_queues.wait_queue, frame->packet_id);
     if (reply_node) {
         // 收到了回复包，调用回调
         EPROTO_INFO_LOG("%s: Received reply packet, calling callback\n", EPROTO_BUS_NAME(bus_mgr));
@@ -669,7 +669,7 @@ static void eproto_process_user_reply_packet(eproto_t* eproto, eproto_bus_manage
             reply_node->callback(EPROTO_SEND_SUCCESS, reply_node->packet_id, frame->data, frame->length,
                                  reply_node->private_data);
         }
-        packet_node_destroy(eproto->user_functions.free, reply_node);
+        eproto_packet_node_destroy(eproto->user_functions.free, reply_node);
     } else {
         // 用户不需要回复，直接丢弃
         EPROTO_INFO_LOG("%s: User doesn't need reply, discarding\n", EPROTO_BUS_NAME(bus_mgr));
@@ -677,8 +677,8 @@ static void eproto_process_user_reply_packet(eproto_t* eproto, eproto_bus_manage
 }
 
 // 处理解析错误
-static void eproto_process_parse_error(eproto_bus_manager_t* bus_mgr, frame_parser_error_t error) {
-    if (error == FRAME_PARSER_ERROR_CRC_CHECK) {
+static void eproto_process_parse_error(eproto_bus_manager_t* bus_mgr, eproto_frame_parser_error_t error) {
+    if (error == EPROTO_FRAME_PARSER_ERROR_CRC_CHECK) {
         // CRC校验失败
         EPROTO_WARNING_LOG("%s: CRC error\n", EPROTO_BUS_NAME(bus_mgr));
         bus_mgr->crc_error_count++;
@@ -694,10 +694,10 @@ static void eproto_process_parse_error(eproto_bus_manager_t* bus_mgr, frame_pars
                 bus_mgr->status_callback(EPROTO_STATUS_CRC_ERROR, NULL, 0);
             }
         }
-    } else if (error == FRAME_PARSER_ERROR_INVALID_LENGTH) {
+    } else if (error == EPROTO_FRAME_PARSER_ERROR_INVALID_LENGTH) {
         // 无效帧长度
         EPROTO_WARNING_LOG("%s: Invalid frame length\n", EPROTO_BUS_NAME(bus_mgr));
-    } else if (error == FRAME_PARSER_ERROR_MEMORY_ALLOC) {
+    } else if (error == EPROTO_FRAME_PARSER_ERROR_MEMORY_ALLOC) {
         // 内存分配失败
         EPROTO_ERROR_LOG("%s: Memory allocation error\n", EPROTO_BUS_NAME(bus_mgr));
     }
@@ -705,19 +705,19 @@ static void eproto_process_parse_error(eproto_bus_manager_t* bus_mgr, frame_pars
 
 // 处理单个总线的接收到的数据
 static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, uint8_t bus_index) {
-    ring_buffer_t* rx_buffer = &bus_mgr->rx_buffer;
+    eproto_ring_buffer_t* rx_buffer = &bus_mgr->rx_buffer;
 
-    if (ring_buffer_available(rx_buffer) > 0) {
+    if (eproto_ring_buffer_available(rx_buffer) > 0) {
         EPROTO_DEBUG_LOG("%s: Processing %d bytes in bus %d\n", EPROTO_BUS_NAME(bus_mgr),
-                         ring_buffer_available(rx_buffer), bus_index);
+                         eproto_ring_buffer_available(rx_buffer), bus_index);
     }
 
     // 尝试解析帧
-    while (ring_buffer_available(rx_buffer) > 0) {
+    while (eproto_ring_buffer_available(rx_buffer) > 0) {
         eproto_frame_t frame;
-        frame_parser_error_t error = frame_parser_parse(rx_buffer, &bus_mgr->parser, &frame);
+        eproto_frame_parser_error_t error = eproto_frame_parser_parse(rx_buffer, &bus_mgr->parser, &frame);
 
-        if (error == FRAME_PARSER_OK) {
+        if (error == EPROTO_FRAME_PARSER_OK) {
             // 检查设备地址是否匹配
             if (frame.destination_address != bus_mgr->self_address &&
                 frame.destination_address != EPROTO_BROADCAST_ADDRESS) {
@@ -731,7 +731,7 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
                 }
 
                 // 释放解析结果
-                frame_parser_free_result(&bus_mgr->parser, &frame);
+                eproto_frame_parser_free_result(&bus_mgr->parser, &frame);
                 continue;
             }
 
@@ -766,8 +766,8 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
             }
 
             // 释放解析结果
-            frame_parser_free_result(&bus_mgr->parser, &frame);
-        } else if (error == FRAME_PARSER_ERROR_NO_HEADER || error == FRAME_PARSER_ERROR_INSUFFICIENT_DATA) {
+            eproto_frame_parser_free_result(&bus_mgr->parser, &frame);
+        } else if (error == EPROTO_FRAME_PARSER_ERROR_NO_HEADER || error == EPROTO_FRAME_PARSER_ERROR_INSUFFICIENT_DATA) {
             // 没有找到帧头或数据不足，退出循环
             break;
         } else {
@@ -799,7 +799,7 @@ void eproto_receive_byte(eproto_t* eproto, uint8_t bus_address, uint8_t byte) {
         return;
     eproto_bus_manager_t* bus_mgr = eproto_find_bus_by_address(eproto, bus_address);
     if (bus_mgr) {
-        ring_buffer_write(&bus_mgr->rx_buffer, &byte, 1);
+        eproto_ring_buffer_write(&bus_mgr->rx_buffer, &byte, 1);
         
         // 调用用户提供的发送信号接口（如果有）
         if (eproto->user_functions.signal_send) {
@@ -835,9 +835,9 @@ static uint32_t eproto_find_min_timeout_timestamp(eproto_t* eproto) {
         }
         
         // 检查等待队列
-        struct list_head* pos = NULL;
-        list_for_each(pos, &bus_mgr->device_queues.wait_queue) {
-            eproto_node_t* wait_node = list_entry(pos, eproto_node_t, list);
+        struct eproto_list_head* pos = NULL;
+        eproto_list_for_each(pos, &bus_mgr->device_queues.wait_queue) {
+            eproto_node_t* wait_node = eproto_list_entry(pos, eproto_node_t, list);
             uint32_t node_timeout = wait_node->timestamp + wait_node->timeout_ms;
             if (min_timeout_timestamp == 0 || node_timeout < min_timeout_timestamp) {
                 min_timeout_timestamp = node_timeout;
@@ -916,7 +916,7 @@ eproto_error_t eproto_handshake(eproto_t* eproto, uint8_t bus_address) {
 
     // 创建握手包节点（使用握手标志）
     uint8_t handshake_packet_type = EPROTO_PACKET_TYPE_USER_SEND | EPROTO_PACKET_TYPE_HANDSHAKE_FLAG;
-    eproto_node_t* handshake_node = packet_node_create(
+    eproto_node_t* handshake_node = eproto_packet_node_create(
         eproto->user_functions.malloc, eproto->user_functions.free, bus_mgr->self_address,
         bus_mgr->destination_devices[0], handshake_packet_id, NULL, 0, NULL, NULL, 1, handshake_packet_type,
         EPROTO_HANDSHAKE_MAX_RETRY_COUNT, EPROTO_HANDSHAKE_TIMEOUT_MS);
@@ -926,7 +926,7 @@ eproto_error_t eproto_handshake(eproto_t* eproto, uint8_t bus_address) {
     }
 
     // 添加到发送队列
-    packet_node_add(&bus_mgr->device_queues.send_queue, handshake_node);
+    eproto_packet_node_add(&bus_mgr->device_queues.send_queue, handshake_node);
     
     EPROTO_INFO_LOG("%s: Handshake node added to send queue\n", EPROTO_BUS_NAME(bus_mgr));
     

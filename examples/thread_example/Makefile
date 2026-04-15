@@ -25,7 +25,7 @@ TARGET = thread_example
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) ../../src/eproto.c ../../src/crc16.c ../../src/packet_node.c ../../src/ring_buffer.c ../../src/frame_parser.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) ../../src/eproto.c ../../src/eproto_crc16.c ../../src/eproto_packet_node.c ../../src/eproto_ring_buffer.c ../../src/eproto_frame_parser.c ../../src/eproto_fixed_block_allocator.c
 
 %.o: %.c $(DEPS)
 	$(CC) $(CFLAGS) -c $< -o $@

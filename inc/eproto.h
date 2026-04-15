@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include "eproto_config.h"
 #include "eproto_def.h"
-#include "ring_buffer.h"
-#include "list.h"
-#include "packet_node.h"
-#include "frame_parser.h"
+#include "eproto_ring_buffer.h"
+#include "eproto_list.h"
+#include "eproto_packet_node.h"
+#include "eproto_frame_parser.h"
 
 // eProto - 嵌入式协议（Embedded Protocol）
 // "e"代表嵌入式（Embedded），"Proto"代表协议（Protocol）
@@ -47,21 +47,21 @@ extern const char* eproto_packet_type_names[];
 
 // 设备队列结构体
 typedef struct {
-    struct list_head send_queue;  // 发送队列
-    struct list_head wait_queue;  // 等待应答队列
+    struct eproto_list_head send_queue;  // 发送队列
+    struct eproto_list_head wait_queue;  // 等待应答队列
 } eproto_device_queues_t;
 
 // 总线管理结构体
 typedef struct {
-    eproto_bus_t* bus;        // 总线接口
-    ring_buffer_t rx_buffer;  // 接收环形缓冲区
-    uint8_t* rx_buffer_addr;  // 接收缓冲区地址
-    uint16_t rx_buffer_size;  // 接收缓冲区大小
-    uint8_t self_address;     // 对应的设备地址
-    const char* name;         // 总线名称，用于日志和调试
+    eproto_bus_t* bus;            // 总线接口
+    eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
+    uint8_t* rx_buffer_addr;        // 接收缓冲区地址
+    uint16_t rx_buffer_size;        // 接收缓冲区大小
+    uint8_t self_address;           // 对应的设备地址
+    const char* name;               // 总线名称，用于日志和调试
 
     // 帧解析器
-    frame_parser_t parser;
+    eproto_frame_parser_t parser;
     // 接口函数
     void (*handshake_callback)(void);
     void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length);
@@ -180,7 +180,7 @@ eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t bus_addre
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
 eproto_error_t eproto_send(eproto_t* eproto, uint8_t bus_address, uint8_t* data, uint16_t length,
-                           packet_callback_t callback, void* private_data, uint8_t no_wait);
+                           eproto_packet_callback_t callback, void* private_data, uint8_t no_wait);
 
 /**
  * 发送用户回复包
@@ -212,7 +212,7 @@ eproto_error_t eproto_send_user_reply(eproto_t* eproto, uint8_t bus_address, uin
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
 eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t bus_address, uint8_t* data, uint16_t length,
-                              packet_callback_t callback, void* private_data, uint8_t no_wait, uint8_t max_retry_count,
+                              eproto_packet_callback_t callback, void* private_data, uint8_t no_wait, uint8_t max_retry_count,
                               uint32_t timeout_ms);
 
 /**
