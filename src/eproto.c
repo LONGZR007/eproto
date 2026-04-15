@@ -3,6 +3,7 @@
 #include "packet_node.h"
 #include "ring_buffer.h"
 #include "frame_parser.h"
+#include "fixed_block_allocator.h"
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
@@ -128,6 +129,16 @@ static void eproto_forward_protocol_ack(eproto_t* eproto, eproto_bus_manager_t* 
     }
 }
 
+// 内部内存分配函数
+static void* eproto_internal_malloc(size_t size) {
+    return fixed_block_alloc(size);
+}
+
+// 内部内存释放函数
+static void eproto_internal_free(void* ptr) {
+    fixed_block_free(ptr);
+}
+
 // 初始化函数
 eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_functions) {
     if (!eproto || !user_functions)
@@ -139,6 +150,16 @@ eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_funct
     // 确保 signal_send 函数指针被正确初始化
     if (!eproto->user_functions.signal_send) {
         eproto->user_functions.signal_send = NULL;
+    }
+
+    // 检查内存分配接口，如果没有提供，使用内部的固定块内存分配器
+    if (!eproto->user_functions.malloc || !eproto->user_functions.free) {
+        // 初始化固定块内存分配器
+        fixed_block_allocator_init();
+        // 使用内部内存分配函数
+        eproto->user_functions.malloc = eproto_internal_malloc;
+        eproto->user_functions.free = eproto_internal_free;
+        EPROTO_INFO_LOG("Using internal fixed block allocator\n");
     }
 
     // 初始化总线管理器

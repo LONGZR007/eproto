@@ -214,7 +214,7 @@ void device1_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_
     printf("\n");
     
     printf("Device 1: Sending reply...\n");
-    eproto_error_t error = eproto_send_user_reply(g_device1_eproto, 0x01, packet_id, data, length);
+    eproto_error_t error = eproto_send_user_reply(g_device1_eproto, 0x02, packet_id, data, length);
     if (error != EPROTO_OK) {
         printf("Device 1: Failed to send reply\n");
     } else {
@@ -230,7 +230,7 @@ void device2_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_
     printf("\n");
     
     printf("Device 2: Sending reply...\n");
-    eproto_error_t error = eproto_send_user_reply(g_device2_eproto, 0x02, packet_id, data, length);
+    eproto_error_t error = eproto_send_user_reply(g_device2_eproto, 0x01, packet_id, data, length);
     if (error != EPROTO_OK) {
         printf("Device 2: Failed to send reply\n");
     } else {
@@ -263,8 +263,8 @@ void* device1_thread(void* arg) {
     printf("Device 1 thread started\n");
     
     eproto_user_functions_t user_functions = {
-        .malloc = mock_malloc,
-        .free = mock_free,
+        .malloc = NULL,  // 不提供内存分配接口，使用内部固定块内存分配器
+        .free = NULL,    // 不提供内存释放接口，使用内部固定块内存分配器
         .signal_wait = device1_signal_wait,
         .signal_send = device1_signal_send,
         .lock = mock_lock,
@@ -334,8 +334,8 @@ void* device2_thread(void* arg) {
     printf("Device 2 thread started\n");
     
     eproto_user_functions_t user_functions = {
-        .malloc = mock_malloc,
-        .free = mock_free,
+        .malloc = mock_malloc,  // 提供内存分配接口，使用外部内存分配器
+        .free = mock_free,      // 提供内存释放接口，使用外部内存分配器
         .signal_wait = device2_signal_wait,
         .signal_send = device2_signal_send,
         .lock = mock_lock,

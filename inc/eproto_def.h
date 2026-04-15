@@ -50,4 +50,10 @@
 // 宏定义：获取总线名称，为空时返回"Unknown"
 #define EPROTO_BUS_NAME(bus_mgr) ((bus_mgr)->name ? (bus_mgr)->name : "Unknown")
 
+// 固定块内存分配器默认配置
+#ifndef CONFIG_FIXED_BLOCK_POOLS
+#define CONFIG_FIXED_BLOCK_POOLS \
+    X(16, 1)
+#endif
+
 #endif  // EPROTO_DEF_H

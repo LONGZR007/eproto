@@ -22,7 +22,7 @@ TARGET = simple_test
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) ../../src/eproto.c ../../src/crc16.c ../../src/packet_node.c ../../src/ring_buffer.c ../../src/frame_parser.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) ../../src/eproto.c ../../src/crc16.c ../../src/packet_node.c ../../src/ring_buffer.c ../../src/frame_parser.c ../../src/fixed_block_allocator.c
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
