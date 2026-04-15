@@ -22,21 +22,22 @@ void device1_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_
 }
 
 // 设备1发送回调函数
-void device1_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length, void* private_data) {
+void device1_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length,
+                           void* private_data) {
     thread_data_t* thread_data = (thread_data_t*)private_data;
     switch (status) {
-    case EPROTO_SEND_SUCCESS:
-        printf("%s: Send success, packet ID: %d\n", thread_data->device_name, packet_id);
-        break;
-    case EPROTO_SEND_TIMEOUT:
-        printf("%s: Send timeout, packet ID: %d\n", thread_data->device_name, packet_id);
-        break;
-    case EPROTO_SEND_ERROR:
-        printf("%s: Send error, packet ID: %d\n", thread_data->device_name, packet_id);
-        break;
-    case EPROTO_SEND_BUSY:
-        printf("%s: Send busy, packet ID: %d\n", thread_data->device_name, packet_id);
-        break;
+        case EPROTO_SEND_SUCCESS:
+            printf("%s: Send success, packet ID: %d\n", thread_data->device_name, packet_id);
+            break;
+        case EPROTO_SEND_TIMEOUT:
+            printf("%s: Send timeout, packet ID: %d\n", thread_data->device_name, packet_id);
+            break;
+        case EPROTO_SEND_ERROR:
+            printf("%s: Send error, packet ID: %d\n", thread_data->device_name, packet_id);
+            break;
+        case EPROTO_SEND_BUSY:
+            printf("%s: Send busy, packet ID: %d\n", thread_data->device_name, packet_id);
+            break;
     }
 }
 
@@ -45,7 +46,7 @@ eproto_signal_result_t device1_signal_wait(uint32_t timestamp) {
     if (!g_current_thread_data) {
         return EPROTO_SIGNAL_TIMEOUT;
     }
-    
+
     if (!g_current_thread_data->semaphore_initialized) {
         // 初始化信号量
         if (sem_init(&g_current_thread_data->semaphore, 0, 0) != 0) {
@@ -54,14 +55,14 @@ eproto_signal_result_t device1_signal_wait(uint32_t timestamp) {
         }
         g_current_thread_data->semaphore_initialized = 1;
     }
-    
+
     // 计算超时时间（毫秒）
     uint32_t current_time = mock_get_timestamp();
     uint32_t timeout_ms = 0;
     if (timestamp > current_time) {
         timeout_ms = timestamp - current_time;
     }
-    
+
     // 等待信号量，使用超时
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
@@ -71,7 +72,7 @@ eproto_signal_result_t device1_signal_wait(uint32_t timestamp) {
         ts.tv_sec++;
         ts.tv_nsec -= 1000000000;
     }
-    
+
     int result = sem_timedwait(&g_current_thread_data->semaphore, &ts);
     if (result == 0) {
         // 收到信号
@@ -127,7 +128,8 @@ void* device1_process_thread(void* arg) {
     // 发送需要回复的测试数据（no_wait=0）到设备2的总线2
     uint8_t test_data[] = {0x11, 0x22, 0x33, 0x44, 0x55};
     printf("%s: Sending test data (needs reply) to device 2 (bus 2)...\n", data->device_name);
-    eproto_error_t error = eproto_send(&data->eproto_inst, 0x02, test_data, sizeof(test_data), device1_send_callback, data, 0);
+    eproto_error_t error =
+        eproto_send(&data->eproto_inst, 0x02, test_data, sizeof(test_data), device1_send_callback, data, 0);
     if (error != EPROTO_OK) {
         printf("%s: Failed to send data\n", data->device_name);
         pthread_exit(NULL);
@@ -206,9 +208,8 @@ void* device1_thread(void* arg) {
     eproto_bus_t device1_bus = {.send = device1_bus_send, .receive = device1_bus_receive};
 
     // 添加路由（使用设备1自己的总线地址0x01）
-    error = eproto_add_bus(&data->eproto_inst, 0x01, &device1_bus, data->rx_buffer,
-                           sizeof(data->rx_buffer), "device1_bus", mock_wakeup, mock_status_callback,
-                           device1_receive_callback);
+    error = eproto_add_bus(&data->eproto_inst, 0x01, &device1_bus, data->rx_buffer, sizeof(data->rx_buffer),
+                           "device1_bus", mock_wakeup, mock_status_callback, device1_receive_callback);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add route\n", data->device_name);
         pthread_exit(NULL);
@@ -233,7 +234,7 @@ void* device1_thread(void* arg) {
 
     // 创建接收线程和处理线程
     pthread_t receive_thread, process_thread;
-    
+
     // 直接使用 data 参数，设置线程类型
     data->thread_type = THREAD_TYPE_RECEIVE;
 
@@ -258,7 +259,7 @@ void* device1_thread(void* arg) {
 
     // 销毁 eProto 实例
     eproto_destroy(&data->eproto_inst);
-    
+
     printf("%s thread finished\n", data->device_name);
     pthread_exit(NULL);
 }

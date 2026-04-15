@@ -51,13 +51,13 @@ static eproto_signal_result_t mock_signal_wait(uint32_t timestamp) {
         }
         g_semaphore_initialized = 1;
     }
-    
+
     uint32_t current_time = mock_get_timestamp();
     uint32_t timeout_ms = 0;
     if (timestamp > current_time) {
         timeout_ms = timestamp - current_time;
     }
-    
+
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += timeout_ms / 1000;
@@ -66,7 +66,7 @@ static eproto_signal_result_t mock_signal_wait(uint32_t timestamp) {
         ts.tv_sec++;
         ts.tv_nsec -= 1000000000;
     }
-    
+
     int result = sem_timedwait(&g_semaphore, &ts);
     if (result == 0) {
         return EPROTO_SIGNAL_DATA;
@@ -256,7 +256,7 @@ void* receive_thread_e(void* arg) {
 void* protocol_thread(void* arg) {
     (void)arg;
     printf("Protocol thread started\n");
-    
+
     while (1) {
         eproto_tick(&g_eproto);
     }

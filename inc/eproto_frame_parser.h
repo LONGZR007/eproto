@@ -53,15 +53,16 @@ typedef struct {
     eproto_free_func_t free_func;
 } eproto_frame_parser_t;
 
-void eproto_frame_parser_init(eproto_frame_parser_t* parser, eproto_frame_parser_config_t* config, eproto_malloc_func_t malloc_func,
-                               eproto_free_func_t free_func);
+void eproto_frame_parser_init(eproto_frame_parser_t* parser, eproto_frame_parser_config_t* config,
+                              eproto_malloc_func_t malloc_func, eproto_free_func_t free_func);
 
-eproto_frame_parser_error_t eproto_frame_parser_parse(eproto_ring_buffer_t* rb, eproto_frame_parser_t* parser, eproto_frame_t* result);
+eproto_frame_parser_error_t eproto_frame_parser_parse(eproto_ring_buffer_t* rb, eproto_frame_parser_t* parser,
+                                                      eproto_frame_t* result);
 
 void eproto_frame_parser_free_result(eproto_frame_parser_t* parser, eproto_frame_t* result);
 
-uint16_t eproto_frame_parser_pack_frame(uint8_t* buffer, uint16_t buffer_size, uint8_t frame_header, uint8_t source_address,
-                                         uint8_t destination_address, uint16_t packet_id, uint8_t packet_type, uint8_t* data,
-                                         uint16_t data_length);
+uint16_t eproto_frame_parser_pack_frame(uint8_t* buffer, uint16_t buffer_size, uint8_t frame_header,
+                                        uint8_t source_address, uint8_t destination_address, uint16_t packet_id,
+                                        uint8_t packet_type, uint8_t* data, uint16_t data_length);
 
 #endif

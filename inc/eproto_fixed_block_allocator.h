@@ -22,7 +22,7 @@ enum {
 #define X(size, count) EPROTO_POOL_ENUM_##size##_##count,
     CONFIG_EPROTO_FIXED_BLOCK_POOLS
 #undef X
-    EPROTO_POOL_COUNT
+        EPROTO_POOL_COUNT
 };
 
 typedef struct eproto_fixed_block_allocator {

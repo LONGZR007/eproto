@@ -26,8 +26,6 @@ static pthread_mutex_t g_mutex2 = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_mutex3 = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_mutex4 = PTHREAD_MUTEX_INITIALIZER;
 
-
-
 // 线程类型枚举
 typedef enum {
     THREAD_TYPE_RECEIVE,  // 接收线程
@@ -42,9 +40,9 @@ typedef struct {
     uint32_t timestamp;
     pthread_mutex_t timestamp_mutex;
     thread_type_t thread_type;  // 线程类型
-    sem_t semaphore;  // 信号量
+    sem_t semaphore;            // 信号量
     int semaphore_initialized;  // 信号量初始化状态
-    int signal_flag;  // 信号标志，用于模拟裸机情况
+    int signal_flag;            // 信号标志，用于模拟裸机情况
 } thread_data_t;
 
 // 设备1的总线发送函数（写入共享缓冲区1）
@@ -229,7 +227,7 @@ static eproto_signal_result_t device1_signal_wait(uint32_t timestamp) {
     if (!g_current_thread_data) {
         return EPROTO_SIGNAL_TIMEOUT;
     }
-    
+
     if (!g_current_thread_data->semaphore_initialized) {
         // 初始化信号量
         if (sem_init(&g_current_thread_data->semaphore, 0, 0) != 0) {
@@ -238,14 +236,14 @@ static eproto_signal_result_t device1_signal_wait(uint32_t timestamp) {
         }
         g_current_thread_data->semaphore_initialized = 1;
     }
-    
+
     // 计算超时时间（毫秒）
     uint32_t current_time = mock_get_timestamp();
     uint32_t timeout_ms = 0;
     if (timestamp > current_time) {
         timeout_ms = timestamp - current_time;
     }
-    
+
     // 等待信号量，使用超时
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
@@ -255,7 +253,7 @@ static eproto_signal_result_t device1_signal_wait(uint32_t timestamp) {
         ts.tv_sec++;
         ts.tv_nsec -= 1000000000;
     }
-    
+
     int result = sem_timedwait(&g_current_thread_data->semaphore, &ts);
     if (result == 0) {
         // 收到信号
@@ -278,24 +276,24 @@ static eproto_signal_result_t device2_signal_wait(uint32_t timestamp) {
     if (!g_current_thread_data) {
         return EPROTO_SIGNAL_TIMEOUT;
     }
-    
+
     // 获取当前时间
     uint32_t current_time = mock_get_timestamp();
-    
+
     // 模拟裸机环境：使用标志检查和超时检查
-    
+
     // 检查信号标志
     if (g_current_thread_data->signal_flag) {
         // 收到信号，重置标志
         g_current_thread_data->signal_flag = 0;
         return EPROTO_SIGNAL_DATA;
     }
-    
+
     // 检查超时
     if (current_time >= timestamp) {
         return EPROTO_SIGNAL_TIMEOUT;
     }
-    
+
     // 没有数据也没有超时
     return EPROTO_SIGNAL_NO_PROGRESS;
 }
@@ -313,7 +311,7 @@ static eproto_signal_result_t device3_signal_wait(uint32_t timestamp) {
     if (!g_current_thread_data) {
         return EPROTO_SIGNAL_TIMEOUT;
     }
-    
+
     if (!g_current_thread_data->semaphore_initialized) {
         // 初始化信号量
         if (sem_init(&g_current_thread_data->semaphore, 0, 0) != 0) {
@@ -322,14 +320,14 @@ static eproto_signal_result_t device3_signal_wait(uint32_t timestamp) {
         }
         g_current_thread_data->semaphore_initialized = 1;
     }
-    
+
     // 计算超时时间（毫秒）
     uint32_t current_time = mock_get_timestamp();
     uint32_t timeout_ms = 0;
     if (timestamp > current_time) {
         timeout_ms = timestamp - current_time;
     }
-    
+
     // 等待信号量，使用超时
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
@@ -339,7 +337,7 @@ static eproto_signal_result_t device3_signal_wait(uint32_t timestamp) {
         ts.tv_sec++;
         ts.tv_nsec -= 1000000000;
     }
-    
+
     int result = sem_timedwait(&g_current_thread_data->semaphore, &ts);
     if (result == 0) {
         // 收到信号
@@ -591,7 +589,8 @@ void* device1_process_thread(void* arg) {
     // 发送需要回复的测试数据（no_wait=0）
     uint8_t test_data[] = {0x11, 0x22, 0x33, 0x44, 0x55};
     printf("%s: Sending test data (needs reply)...\n", data->device_name);
-    eproto_error_t error = eproto_send(&data->eproto_inst, 0x02, test_data, sizeof(test_data), device1_send_callback, data, 0);
+    eproto_error_t error =
+        eproto_send(&data->eproto_inst, 0x02, test_data, sizeof(test_data), device1_send_callback, data, 0);
     if (error != EPROTO_OK) {
         printf("%s: Failed to send data\n", data->device_name);
         pthread_exit(NULL);

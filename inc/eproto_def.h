@@ -52,8 +52,7 @@
 
 // 固定块内存分配器默认配置
 #ifndef CONFIG_EPROTO_FIXED_BLOCK_POOLS
-#define CONFIG_EPROTO_FIXED_BLOCK_POOLS \
-    X(16, 1)
+#define CONFIG_EPROTO_FIXED_BLOCK_POOLS X(16, 1)
 #endif
 
 #endif  // EPROTO_DEF_H

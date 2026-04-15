@@ -12,40 +12,40 @@ struct eproto_list_head {
 
 #define EPROTO_LIST_HEAD(name) struct eproto_list_head name = EPROTO_LIST_HEAD_INIT(name)
 
-#define EPROTO_INIT_LIST_HEAD(ptr)  \
-    do {                             \
-        (ptr)->next = (ptr);         \
-        (ptr)->prev = (ptr);         \
+#define EPROTO_INIT_LIST_HEAD(ptr) \
+    do {                           \
+        (ptr)->next = (ptr);       \
+        (ptr)->prev = (ptr);       \
     } while (0)
 
-#define eproto_list_add(new, head)                  \
-    do {                                             \
-        struct eproto_list_head *prev = (head);     \
-        struct eproto_list_head *next = (head)->next; \
-        (new)->prev = prev;                          \
-        (new)->next = next;                          \
-        prev->next = (new);                          \
-        next->prev = (new);                          \
-    } while (0)
-
-#define eproto_list_add_tail(new, head)             \
-    do {                                             \
-        struct eproto_list_head *prev = (head)->prev; \
-        struct eproto_list_head *next = (head);     \
-        (new)->prev = prev;                          \
-        (new)->next = next;                          \
-        prev->next = (new);                          \
-        next->prev = (new);                          \
-    } while (0)
-
-#define eproto_list_del(entry)                       \
+#define eproto_list_add(new, head)                    \
     do {                                              \
+        struct eproto_list_head *prev = (head);       \
+        struct eproto_list_head *next = (head)->next; \
+        (new)->prev = prev;                           \
+        (new)->next = next;                           \
+        prev->next = (new);                           \
+        next->prev = (new);                           \
+    } while (0)
+
+#define eproto_list_add_tail(new, head)               \
+    do {                                              \
+        struct eproto_list_head *prev = (head)->prev; \
+        struct eproto_list_head *next = (head);       \
+        (new)->prev = prev;                           \
+        (new)->next = next;                           \
+        prev->next = (new);                           \
+        next->prev = (new);                           \
+    } while (0)
+
+#define eproto_list_del(entry)                         \
+    do {                                               \
         struct eproto_list_head *prev = (entry)->prev; \
         struct eproto_list_head *next = (entry)->next; \
-        prev->next = next;                            \
-        next->prev = prev;                            \
-        (entry)->next = NULL;                         \
-        (entry)->prev = NULL;                         \
+        prev->next = next;                             \
+        next->prev = prev;                             \
+        (entry)->next = NULL;                          \
+        (entry)->prev = NULL;                          \
     } while (0)
 
 #define eproto_list_empty(head) ((head)->next == (head))

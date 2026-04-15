@@ -1,9 +1,10 @@
 #include "eproto_packet_node.h"
 
-eproto_node_t* eproto_packet_node_create(eproto_malloc_func_t malloc_func, eproto_free_func_t free_func, uint8_t source_address,
-                                          uint8_t destination_address, uint16_t packet_id, uint8_t* data, uint16_t data_length,
-                                          eproto_packet_callback_t callback, void* private_data, uint8_t no_wait, uint8_t packet_type,
-                                          uint8_t max_retry_count, uint32_t timeout_ms) {
+eproto_node_t* eproto_packet_node_create(eproto_malloc_func_t malloc_func, eproto_free_func_t free_func,
+                                         uint8_t source_address, uint8_t destination_address, uint16_t packet_id,
+                                         uint8_t* data, uint16_t data_length, eproto_packet_callback_t callback,
+                                         void* private_data, uint8_t no_wait, uint8_t packet_type,
+                                         uint8_t max_retry_count, uint32_t timeout_ms) {
     eproto_node_t* node = (eproto_node_t*)malloc_func(sizeof(eproto_node_t));
     if (!node)
         return NULL;

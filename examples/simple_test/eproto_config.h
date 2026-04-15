@@ -59,9 +59,9 @@
 
 // 固定块内存分配器配置
 #define CONFIG_EPROTO_FIXED_BLOCK_POOLS \
-    X(32, 10)   \
-    X(64, 10)   \
-    X(128, 10)  \
+    X(32, 10)                           \
+    X(64, 10)                           \
+    X(128, 10)                          \
     X(256, 10)
 
 #endif  // EPROTO_CONFIG_H

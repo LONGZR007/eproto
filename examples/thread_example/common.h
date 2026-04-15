@@ -27,11 +27,11 @@ typedef struct {
     uint32_t timestamp;
     pthread_mutex_t timestamp_mutex;
     thread_type_t thread_type;  // 线程类型
-    sem_t semaphore;  // 信号量
+    sem_t semaphore;            // 信号量
     int semaphore_initialized;  // 信号量初始化状态
-    int signal_flag;  // 信号标志，用于模拟裸机情况
-    uint8_t rx_buffer[256];  // 接收缓冲区1
-    uint8_t rx_buffer2[256];  // 接收缓冲区2（用于第二条总线）
+    int signal_flag;            // 信号标志，用于模拟裸机情况
+    uint8_t rx_buffer[256];     // 接收缓冲区1
+    uint8_t rx_buffer2[256];    // 接收缓冲区2（用于第二条总线）
 } thread_data_t;
 
 // 全局变量声明
@@ -105,19 +105,22 @@ void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length
 void device1_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
 
 // 设备1发送回调函数
-void device1_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length, void* private_data);
+void device1_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length,
+                           void* private_data);
 
 // 设备2接收回调函数
 void device2_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
 
 // 设备2发送回调函数
-void device2_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length, void* private_data);
+void device2_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length,
+                           void* private_data);
 
 // 设备3接收回调函数
 void device3_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
 
 // 设备3发送回调函数
-void device3_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length, void* private_data);
+void device3_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length,
+                           void* private_data);
 
 // 设备1信号等待函数
 eproto_signal_result_t device1_signal_wait(uint32_t timestamp);
@@ -164,4 +167,4 @@ void* device3_process_thread(void* arg);
 // 设备3线程
 void* device3_thread(void* arg);
 
-#endif // COMMON_H
+#endif  // COMMON_H

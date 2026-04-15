@@ -53,12 +53,12 @@ typedef struct {
 
 // 总线管理结构体
 typedef struct {
-    eproto_bus_t* bus;            // 总线接口
+    eproto_bus_t* bus;               // 总线接口
     eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
-    uint8_t* rx_buffer_addr;        // 接收缓冲区地址
-    uint16_t rx_buffer_size;        // 接收缓冲区大小
-    uint8_t self_address;           // 对应的设备地址
-    const char* name;               // 总线名称，用于日志和调试
+    uint8_t* rx_buffer_addr;         // 接收缓冲区地址
+    uint16_t rx_buffer_size;         // 接收缓冲区大小
+    uint8_t self_address;            // 对应的设备地址
+    const char* name;                // 总线名称，用于日志和调试
 
     // 帧解析器
     eproto_frame_parser_t parser;
@@ -212,8 +212,8 @@ eproto_error_t eproto_send_user_reply(eproto_t* eproto, uint8_t bus_address, uin
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
 eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t bus_address, uint8_t* data, uint16_t length,
-                              eproto_packet_callback_t callback, void* private_data, uint8_t no_wait, uint8_t max_retry_count,
-                              uint32_t timeout_ms);
+                              eproto_packet_callback_t callback, void* private_data, uint8_t no_wait,
+                              uint8_t max_retry_count, uint32_t timeout_ms);
 
 /**
  * 发送用户回复包（扩展接口，支持自定义超时时间和最大重发次数）

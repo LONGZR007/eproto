@@ -102,7 +102,7 @@ void eproto_fixed_block_allocator_stats(void) {
     printf("Eproto Fixed Block Allocator Stats:\n");
     for (size_t i = 0; i < g_eproto_fixed_block_allocator.pool_count; i++) {
         eproto_fixed_block_pool_t *pool = &g_eproto_fixed_block_allocator.pools[i];
-        printf("Pool size: %zu bytes, Total blocks: %zu, Used blocks: %zu, Max used: %zu\n",
-               pool->block_size, pool->block_count, pool->used_count, pool->max_used_count);
+        printf("Pool size: %zu bytes, Total blocks: %zu, Used blocks: %zu, Max used: %zu\n", pool->block_size,
+               pool->block_count, pool->used_count, pool->max_used_count);
     }
 }
