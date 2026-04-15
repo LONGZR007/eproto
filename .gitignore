@@ -13,4 +13,6 @@ build/
 *.log
 *.tmp
 *.temp
+push_to_gitee.py
+.trae/
 
