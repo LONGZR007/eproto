@@ -1,0 +1,16 @@
+*.o
+*.out
+*.exe
+build/
+*.a
+*.so
+*.dylib
+*.dll
+.DS_Store
+*.swp
+*.swo
+*~
+*.log
+*.tmp
+*.temp
+

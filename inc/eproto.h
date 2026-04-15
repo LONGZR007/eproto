@@ -1,0 +1,281 @@
+#ifndef EPROTO_H
+#define EPROTO_H
+
+#include <stdint.h>
+#include "eproto_config.h"
+#include "eproto_def.h"
+#include "ring_buffer.h"
+#include "list.h"
+#include "packet_node.h"
+#include "frame_parser.h"
+
+// eProto - 嵌入式协议（Embedded Protocol）
+// "e"代表嵌入式（Embedded），"Proto"代表协议（Protocol）
+
+// 总线接口
+typedef struct {
+    void (*send)(uint8_t* data, uint16_t length);
+    uint16_t (*receive)(uint8_t* buffer, uint16_t size);
+} eproto_bus_t;
+
+// 信号回调接口
+typedef enum {
+    EPROTO_SIGNAL_DATA = 0,    // 有数据
+    EPROTO_SIGNAL_TIMEOUT,     // 超时
+    EPROTO_SIGNAL_NO_PROGRESS  // 没有进展
+} eproto_signal_result_t;
+
+// 状态回调函数
+typedef enum {
+    EPROTO_STATUS_CRC_ERROR = 0,        // CRC校验错误
+    EPROTO_STATUS_SLEEP_SUCCESS,        // 休眠成功
+    EPROTO_STATUS_SLEEP_FAILED,         // 休眠失败
+    EPROTO_STATUS_WAKEUP_SUCCESS,       // 唤醒成功
+    EPROTO_STATUS_WAKEUP_FAILED,        // 唤醒失败
+    EPROTO_STATUS_MULTIPLE_CRC_ERRORS,  // 多次连续CRC错误
+    EPROTO_STATUS_HANDSHAKE_SUCCESS     // 握手成功
+} eproto_status_t;
+
+// 包类型名称数组
+extern const char* eproto_packet_type_names[];
+
+// 协议帧格式定义
+// 帧结构：| 帧头(1) | 版本号(1) | 长度(2) | 包类型(1) | 原地址(1) | 设备地址(1)
+// | 包ID(2) | 数据(n) | CRC(2) |
+
+// 帧结构 typedef - 定义在 frame_parser.h 中
+
+// 设备队列结构体
+typedef struct {
+    struct list_head send_queue;  // 发送队列
+    struct list_head wait_queue;  // 等待应答队列
+} eproto_device_queues_t;
+
+// 总线管理结构体
+typedef struct {
+    eproto_bus_t* bus;        // 总线接口
+    ring_buffer_t rx_buffer;  // 接收环形缓冲区
+    uint8_t* rx_buffer_addr;  // 接收缓冲区地址
+    uint16_t rx_buffer_size;  // 接收缓冲区大小
+    uint8_t self_address;     // 对应的设备地址
+    const char* name;         // 总线名称，用于日志和调试
+
+    // 帧解析器
+    frame_parser_t parser;
+    // 接口函数
+    void (*handshake_callback)(void);
+    void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length);
+    void (*receive_callback)(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
+    // 状态变量
+    uint16_t next_packet_id;
+    uint16_t last_id;  // 上次处理的包ID，用于重发包检测
+    uint8_t crc_error_count;
+    uint8_t handshake_required;        // 握手标志
+    eproto_node_t* current_send_node;  // 当前正在发送的节点
+    // 设备队列
+    eproto_device_queues_t device_queues;
+    // 目标设备地址数组
+    uint8_t destination_devices[EPROTO_MAX_DESTINATION_DEVICES];
+    // 目标设备地址数量
+    uint8_t destination_device_count;
+} eproto_bus_manager_t;
+
+// 包节点结构体（用于发送队列和等待队列） - 定义在 packet_node.h 中
+
+// 用户接口结构体
+typedef struct {
+    // 内存分配接口
+    void* (*malloc)(size_t size);
+    void (*free)(void* ptr);
+
+    // 信号回调接口
+    eproto_signal_result_t (*signal_wait)(uint32_t timestamp);
+    void (*signal_send)(void);
+
+    // 线程安全锁接口
+    void (*lock)(void);
+    void (*unlock)(void);
+
+    // 1ms时间戳接口
+    uint32_t (*get_timestamp)(void);
+
+    // 超时时间戳
+    uint32_t timeout_timestamp;
+} eproto_user_functions_t;
+
+// 错误码定义
+typedef enum {
+    EPROTO_OK = 0,
+    EPROTO_ERROR_CRC,
+    EPROTO_ERROR_TIMEOUT,
+    EPROTO_ERROR_BUFFER_FULL,
+    EPROTO_ERROR_INVALID_FRAME,
+    EPROTO_ERROR_MAX_RETRY,
+    EPROTO_ERROR_ROUTE_NOT_FOUND,
+    EPROTO_ERROR_SLEEP_FAILED,
+    EPROTO_ERROR_WAKEUP_FAILED
+} eproto_error_t;
+
+// eProto实例结构体（支持多实例）
+typedef struct {
+    eproto_user_functions_t user_functions;  // 用户函数
+
+    // 总线管理器
+    eproto_bus_manager_t bus_managers[EPROTO_MAX_BUS_COUNT];
+} eproto_t;
+
+/**
+ * 初始化eProto实例
+ * @param eproto           指向eProto实例的指针
+ * @param user_functions   用户提供的回调函数集合
+ * @return                 操作结果，EPROTO_OK表示成功，其他值表示错误
+ */
+eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_functions);
+
+/**
+ * 销毁eProto实例
+ * @param eproto   指向eProto实例的指针
+ */
+void eproto_destroy(eproto_t* eproto);
+
+/**
+ * 向eProto实例添加总线
+ * @param eproto            指向eProto实例的指针
+ * @param self_address      总线的自身地址
+ * @param bus               总线接口结构体
+ * @param rx_buffer         接收缓冲区
+ * @param rx_buffer_size    接收缓冲区大小
+ * @param name              总线名称，用于日志和调试
+ * @param wakeup            唤醒回调函数
+ * @param status_callback   状态回调函数
+ * @param receive_callback  接收回调函数
+ * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
+ */
+eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus_t* bus, uint8_t* rx_buffer,
+                              uint16_t rx_buffer_size, const char* name, void (*handshake_callback)(void),
+                              void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length),
+                              void (*receive_callback)(uint8_t source_address, uint16_t packet_id, uint8_t* data,
+                                                       uint16_t length));
+
+/**
+ * 向指定总线添加目标设备地址
+ * @param eproto             指向eProto实例的指针
+ * @param bus_address        总线地址
+ * @param destination_address 目标设备地址
+ * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
+ */
+eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t bus_address, uint8_t destination_address);
+
+/**
+ * 主动发送数据
+ * @param eproto         指向eProto实例的指针
+ * @param bus_address    总线地址
+ * @param data           要发送的数据
+ * @param length         数据长度
+ * @param callback       发送完成后的回调函数
+ * @param private_data   回调函数的私有数据
+ * @param no_wait        是否不需要等待回复
+ * @return               操作结果，EPROTO_OK表示成功，其他值表示错误
+ * @note                data
+ * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
+ */
+eproto_error_t eproto_send(eproto_t* eproto, uint8_t bus_address, uint8_t* data, uint16_t length,
+                           packet_callback_t callback, void* private_data, uint8_t no_wait);
+
+/**
+ * 发送用户回复包
+ * @param eproto         指向eProto实例的指针
+ * @param bus_address    总线地址
+ * @param packet_id      包ID
+ * @param data           要发送的数据
+ * @param length         数据长度
+ * @return               操作结果，EPROTO_OK表示成功，其他值表示错误
+ * @note                data
+ * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
+ */
+eproto_error_t eproto_send_user_reply(eproto_t* eproto, uint8_t bus_address, uint16_t packet_id, uint8_t* data,
+                                      uint16_t length);
+
+/**
+ * 主动发送数据（扩展接口，支持自定义超时时间和最大重发次数）
+ * @param eproto             指向eProto实例的指针
+ * @param bus_address        总线地址
+ * @param data               要发送的数据
+ * @param length             数据长度
+ * @param callback           发送完成后的回调函数
+ * @param private_data       回调函数的私有数据
+ * @param no_wait            是否不需要等待回复
+ * @param max_retry_count    最大重发次数
+ * @param timeout_ms         超时时间（毫秒）
+ * @return                   操作结果，EPROTO_OK表示成功，其他值表示错误
+ * @note                    data
+ * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
+ */
+eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t bus_address, uint8_t* data, uint16_t length,
+                              packet_callback_t callback, void* private_data, uint8_t no_wait, uint8_t max_retry_count,
+                              uint32_t timeout_ms);
+
+/**
+ * 发送用户回复包（扩展接口，支持自定义超时时间和最大重发次数）
+ * @param eproto             指向eProto实例的指针
+ * @param bus_address        总线地址
+ * @param packet_id          包ID
+ * @param data               要发送的数据
+ * @param length             数据长度
+ * @param max_retry_count    最大重发次数
+ * @param timeout_ms         超时时间（毫秒）
+ * @return                   操作结果，EPROTO_OK表示成功，其他值表示错误
+ * @note                    data
+ * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
+ */
+eproto_error_t eproto_send_user_reply_ex(eproto_t* eproto, uint8_t bus_address, uint16_t packet_id, uint8_t* data,
+                                         uint16_t length, uint8_t max_retry_count, uint32_t timeout_ms);
+
+/**
+ * 设置总线握手标志
+ * @param eproto        指向eProto实例的指针
+ * @param bus_address   总线地址
+ * @param required      是否需要握手（1需要，0不需要）
+ * @return              操作结果，EPROTO_OK表示成功，其他值表示错误
+ */
+eproto_error_t eproto_set_handshake(eproto_t* eproto, uint8_t bus_address, uint8_t required);
+
+/**
+ * 执行总线握手
+ * @param eproto        指向eProto实例的指针
+ * @param bus_address   总线地址
+ * @return              操作结果，EPROTO_OK表示成功，其他值表示错误
+ */
+eproto_error_t eproto_handshake(eproto_t* eproto, uint8_t bus_address);
+
+/**
+ * 接收数据处理（由中断或轮询调用）
+ * @param eproto       指向eProto实例的指针
+ * @param bus_address  总线地址
+ * @param byte         接收到的字节数据
+ */
+void eproto_receive_byte(eproto_t* eproto, uint8_t bus_address, uint8_t byte);
+
+/**
+ * 等待信号
+ * @param eproto   指向eProto实例的指针
+ * @return         信号状态，0表示超时，1表示有信号
+ */
+uint8_t eproto_wait_for_signal(eproto_t* eproto);
+
+/**
+ * 定时处理函数
+ * @param eproto   指向eProto实例的指针
+ * @return         最小超时时间戳
+ */
+uint32_t eproto_tick(eproto_t* eproto);
+
+/**
+ * 获取指定总线的状态
+ * @param eproto       指向eProto实例的指针
+ * @param bus_address  总线地址
+ * @return            状态值，0表示不需要握手，1表示需要握手
+ */
+uint8_t eproto_get_status(eproto_t* eproto, uint8_t bus_address);
+
+#endif  // EPROTO_H
