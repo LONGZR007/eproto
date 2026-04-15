@@ -2,7 +2,7 @@
 #define EPROTO_CONFIG_H
 
 // eProto - 嵌入式协议（Embedded Protocol）
-// "e"代表嵌入式（Embedded），"Proto"代表协议（Protocol）
+// "e"代表嵌入式（Embedded），"Proto"代表协议（Embedded Protocol）
 
 // 协议配置参数
 
