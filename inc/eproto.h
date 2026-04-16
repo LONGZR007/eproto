@@ -168,67 +168,67 @@ eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t bus_addre
 
 /**
  * 主动发送数据
- * @param eproto         指向eProto实例的指针
- * @param bus_address    总线地址
- * @param data           要发送的数据
- * @param length         数据长度
- * @param callback       发送完成后的回调函数
- * @param private_data   回调函数的私有数据
- * @param no_wait        是否不需要等待回复
- * @return               操作结果，EPROTO_OK表示成功，其他值表示错误
+ * @param eproto                指向eProto实例的指针
+ * @param destination_address   目标设备地址
+ * @param data                  要发送的数据
+ * @param length                数据长度
+ * @param callback              发送完成后的回调函数
+ * @param private_data          回调函数的私有数据
+ * @param no_wait               是否不需要等待回复
+ * @return                      操作结果，EPROTO_OK表示成功，其他值表示错误
  * @note                data
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
-eproto_error_t eproto_send(eproto_t* eproto, uint8_t bus_address, uint8_t* data, uint16_t length,
+eproto_error_t eproto_send(eproto_t* eproto, uint8_t destination_address, uint8_t* data, uint16_t length,
                            eproto_packet_callback_t callback, void* private_data, uint8_t no_wait);
 
 /**
  * 发送用户回复包
- * @param eproto         指向eProto实例的指针
- * @param bus_address    总线地址
- * @param packet_id      包ID
- * @param data           要发送的数据
- * @param length         数据长度
- * @return               操作结果，EPROTO_OK表示成功，其他值表示错误
+ * @param eproto                指向eProto实例的指针
+ * @param destination_address   目标设备地址
+ * @param packet_id             包ID
+ * @param data                  要发送的数据
+ * @param length                数据长度
+ * @return                      操作结果，EPROTO_OK表示成功，其他值表示错误
  * @note                data
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
-eproto_error_t eproto_send_user_reply(eproto_t* eproto, uint8_t bus_address, uint16_t packet_id, uint8_t* data,
+eproto_error_t eproto_send_user_reply(eproto_t* eproto, uint8_t destination_address, uint16_t packet_id, uint8_t* data,
                                       uint16_t length);
 
 /**
  * 主动发送数据（扩展接口，支持自定义超时时间和最大重发次数）
- * @param eproto             指向eProto实例的指针
- * @param bus_address        总线地址
- * @param data               要发送的数据
- * @param length             数据长度
- * @param callback           发送完成后的回调函数
- * @param private_data       回调函数的私有数据
- * @param no_wait            是否不需要等待回复
- * @param max_retry_count    最大重发次数
- * @param timeout_ms         超时时间（毫秒）
- * @return                   操作结果，EPROTO_OK表示成功，其他值表示错误
+ * @param eproto                指向eProto实例的指针
+ * @param destination_address   目标设备地址
+ * @param data                  要发送的数据
+ * @param length                数据长度
+ * @param callback              发送完成后的回调函数
+ * @param private_data          回调函数的私有数据
+ * @param no_wait               是否不需要等待回复
+ * @param max_retry_count       最大重发次数
+ * @param timeout_ms            超时时间（毫秒）
+ * @return                      操作结果，EPROTO_OK表示成功，其他值表示错误
  * @note                    data
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
-eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t bus_address, uint8_t* data, uint16_t length,
+eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t destination_address, uint8_t* data, uint16_t length,
                               eproto_packet_callback_t callback, void* private_data, uint8_t no_wait,
                               uint8_t max_retry_count, uint32_t timeout_ms);
 
 /**
  * 发送用户回复包（扩展接口，支持自定义超时时间和最大重发次数）
- * @param eproto             指向eProto实例的指针
- * @param bus_address        总线地址
- * @param packet_id          包ID
- * @param data               要发送的数据
- * @param length             数据长度
- * @param max_retry_count    最大重发次数
- * @param timeout_ms         超时时间（毫秒）
- * @return                   操作结果，EPROTO_OK表示成功，其他值表示错误
+ * @param eproto                指向eProto实例的指针
+ * @param destination_address   目标设备地址
+ * @param packet_id             包ID
+ * @param data                  要发送的数据
+ * @param length                数据长度
+ * @param max_retry_count       最大重发次数
+ * @param timeout_ms            超时时间（毫秒）
+ * @return                      操作结果，EPROTO_OK表示成功，其他值表示错误
  * @note                    data
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
-eproto_error_t eproto_send_user_reply_ex(eproto_t* eproto, uint8_t bus_address, uint16_t packet_id, uint8_t* data,
+eproto_error_t eproto_send_user_reply_ex(eproto_t* eproto, uint8_t destination_address, uint16_t packet_id, uint8_t* data,
                                          uint16_t length, uint8_t max_retry_count, uint32_t timeout_ms);
 
 /**

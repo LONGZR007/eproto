@@ -4,7 +4,7 @@ import time
 import os
 import signal
 
-def run_with_timeout(command, timeout=10):
+def run_with_timeout(command, timeout=5):
     """
     运行命令并在超时后杀掉进程
     
@@ -18,21 +18,14 @@ def run_with_timeout(command, timeout=10):
     # 启动进程
     process = subprocess.Popen(
         command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
         text=True
     )
     
     try:
         # 等待进程完成或超时
-        stdout, stderr = process.communicate(timeout=timeout)
+        process.communicate(timeout=timeout)
         
         # 进程正常完成
-        print("\n=== 进程输出 ===")
-        print(stdout)
-        if stderr:
-            print("\n=== 错误输出 ===")
-            print(stderr)
         print(f"\n进程退出码: {process.returncode}")
         
     except subprocess.TimeoutExpired:
