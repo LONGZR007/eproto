@@ -17,6 +17,7 @@ pthread_mutex_t g_mutex1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_mutex3 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_mutex4 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t g_eproto_lock = PTHREAD_MUTEX_INITIALIZER;
 
 // 全局线程数据指针，用于信号函数访问
 // 使用线程局部存储来存储当前线程数据，避免线程安全问题
@@ -41,12 +42,12 @@ uint32_t mock_get_timestamp(void) {
 
 // 模拟锁函数
 void mock_lock(void) {
-    // 简单的模拟，实际应用中应使用真实的锁机制
+    pthread_mutex_lock(&g_eproto_lock);
 }
 
 // 模拟解锁函数
 void mock_unlock(void) {
-    // 简单的模拟，实际应用中应使用真实的锁机制
+    pthread_mutex_unlock(&g_eproto_lock);
 }
 
 // 模拟唤醒函数

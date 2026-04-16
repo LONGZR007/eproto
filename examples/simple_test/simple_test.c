@@ -22,10 +22,29 @@ static pthread_mutex_t g_eproto_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static eproto_t* g_device1_eproto = NULL;
 static eproto_t* g_device2_eproto = NULL;
-static sem_t g_device1_semaphore;
-static int g_device1_semaphore_initialized = 0;
-static sem_t g_device2_semaphore;
-static int g_device2_semaphore_initialized = 0;
+
+// 线程类型枚举
+typedef enum {
+    THREAD_TYPE_RECEIVE,
+    THREAD_TYPE_PROCESS
+} thread_type_t;
+
+// 线程数据结构
+typedef struct {
+    uint8_t device_address;
+    eproto_t eproto_inst;
+    char* device_name;
+    uint32_t timestamp;
+    pthread_mutex_t timestamp_mutex;
+    thread_type_t thread_type;
+    sem_t semaphore;
+    int semaphore_initialized;
+    int signal_flag;
+    uint8_t rx_buffer[256];
+    uint8_t rx_buffer2[256];
+} thread_data_t;
+
+__thread thread_data_t* g_current_thread_data = NULL;
 
 void* mock_malloc(size_t size) {
     return malloc(size);
@@ -59,12 +78,16 @@ void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length
 }
 
 eproto_signal_result_t device1_signal_wait(uint32_t timestamp) {
-    if (!g_device1_semaphore_initialized) {
-        if (sem_init(&g_device1_semaphore, 0, 0) != 0) {
-            printf("Device 1: Failed to initialize semaphore\n");
+    if (!g_current_thread_data) {
+        return EPROTO_SIGNAL_TIMEOUT;
+    }
+
+    if (!g_current_thread_data->semaphore_initialized) {
+        if (sem_init(&g_current_thread_data->semaphore, 0, 0) != 0) {
+            printf("%s: Failed to initialize semaphore\n", g_current_thread_data->device_name);
             return EPROTO_SIGNAL_TIMEOUT;
         }
-        g_device1_semaphore_initialized = 1;
+        g_current_thread_data->semaphore_initialized = 1;
     }
 
     uint32_t current_time = mock_get_timestamp();
@@ -82,7 +105,7 @@ eproto_signal_result_t device1_signal_wait(uint32_t timestamp) {
         ts.tv_nsec -= 1000000000;
     }
 
-    int result = sem_timedwait(&g_device1_semaphore, &ts);
+    int result = sem_timedwait(&g_current_thread_data->semaphore, &ts);
     if (result == 0) {
         return EPROTO_SIGNAL_DATA;
     } else {
@@ -91,18 +114,22 @@ eproto_signal_result_t device1_signal_wait(uint32_t timestamp) {
 }
 
 void device1_signal_send(void) {
-    if (g_device1_semaphore_initialized) {
-        sem_post(&g_device1_semaphore);
+    if (g_current_thread_data && g_current_thread_data->semaphore_initialized) {
+        sem_post(&g_current_thread_data->semaphore);
     }
 }
 
 eproto_signal_result_t device2_signal_wait(uint32_t timestamp) {
-    if (!g_device2_semaphore_initialized) {
-        if (sem_init(&g_device2_semaphore, 0, 0) != 0) {
-            printf("Device 2: Failed to initialize semaphore\n");
+    if (!g_current_thread_data) {
+        return EPROTO_SIGNAL_TIMEOUT;
+    }
+
+    if (!g_current_thread_data->semaphore_initialized) {
+        if (sem_init(&g_current_thread_data->semaphore, 0, 0) != 0) {
+            printf("%s: Failed to initialize semaphore\n", g_current_thread_data->device_name);
             return EPROTO_SIGNAL_TIMEOUT;
         }
-        g_device2_semaphore_initialized = 1;
+        g_current_thread_data->semaphore_initialized = 1;
     }
 
     uint32_t current_time = mock_get_timestamp();
@@ -120,7 +147,7 @@ eproto_signal_result_t device2_signal_wait(uint32_t timestamp) {
         ts.tv_nsec -= 1000000000;
     }
 
-    int result = sem_timedwait(&g_device2_semaphore, &ts);
+    int result = sem_timedwait(&g_current_thread_data->semaphore, &ts);
     if (result == 0) {
         return EPROTO_SIGNAL_DATA;
     } else {
@@ -129,8 +156,8 @@ eproto_signal_result_t device2_signal_wait(uint32_t timestamp) {
 }
 
 void device2_signal_send(void) {
-    if (g_device2_semaphore_initialized) {
-        sem_post(&g_device2_semaphore);
+    if (g_current_thread_data && g_current_thread_data->semaphore_initialized) {
+        sem_post(&g_current_thread_data->semaphore);
     }
 }
 
@@ -218,7 +245,7 @@ void device1_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_
     printf("\n");
 
     printf("Device 1: Sending reply...\n");
-    eproto_error_t error = eproto_send_user_reply(g_device1_eproto, 0x02, packet_id, data, length);
+    eproto_error_t error = eproto_send_user_reply(g_device1_eproto, 0x01, packet_id, data, length);
     if (error != EPROTO_OK) {
         printf("Device 1: Failed to send reply\n");
     } else {
@@ -234,7 +261,7 @@ void device2_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_
     printf("\n");
 
     printf("Device 2: Sending reply...\n");
-    eproto_error_t error = eproto_send_user_reply(g_device2_eproto, 0x01, packet_id, data, length);
+    eproto_error_t error = eproto_send_user_reply(g_device2_eproto, 0x02, packet_id, data, length);
     if (error != EPROTO_OK) {
         printf("Device 2: Failed to send reply\n");
     } else {
@@ -263,15 +290,84 @@ void device1_send_callback(eproto_send_status_t status, uint16_t packet_id, uint
     }
 }
 
-void* device1_thread(void* arg) {
-    (void)arg;
-    printf("Device 1 thread started\n");
+// 设备1接收线程
+void* device1_receive_thread(void* arg) {
+    thread_data_t* data = (thread_data_t*)arg;
+    printf("%s receive thread started\n", data->device_name);
+    fflush(stdout);
 
-    // 初始化固定块内存分配器
+    g_current_thread_data = data;
+
+    for (int i = 0; i < 50; i++) {
+        uint8_t rx_buffer[256];
+        uint16_t rx_count = device1_bus_receive(rx_buffer, sizeof(rx_buffer));
+        if (rx_count > 0) {
+            eproto_receive_data(&data->eproto_inst, 0x01, rx_buffer, rx_count);
+        }
+        usleep(50000);
+    }
+
+    printf("%s receive thread finished\n", data->device_name);
+    fflush(stdout);
+    pthread_exit(NULL);
+}
+
+// 设备1处理线程
+void* device1_process_thread(void* arg) {
+    thread_data_t* data = (thread_data_t*)arg;
+    printf("%s process thread started\n", data->device_name);
+    fflush(stdout);
+
+    g_current_thread_data = data;
+
+    usleep(100000);
+
+    uint8_t test_data[] = {0x11, 0x22, 0x33, 0x44, 0x55};
+    printf("%s: Sending test data (needs reply)...\n", data->device_name);
+    fflush(stdout);
+    eproto_error_t error =
+        eproto_send(&data->eproto_inst, 0x02, test_data, sizeof(test_data), device1_send_callback, NULL, 0);
+    if (error != EPROTO_OK) {
+        printf("%s: Failed to send data\n", data->device_name);
+        fflush(stdout);
+        pthread_exit(NULL);
+    }
+    printf("%s: Data sent successfully\n", data->device_name);
+    fflush(stdout);
+
+    usleep(100000);
+
+    uint8_t broadcast_data[] = {0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+    printf("%s: Sending broadcast data to all devices...\n", data->device_name);
+    fflush(stdout);
+    error = eproto_send_ex(&data->eproto_inst, 0xFF, broadcast_data, sizeof(broadcast_data), device1_send_callback, NULL, 1, 0, 0);
+    if (error != EPROTO_OK) {
+        printf("%s: Failed to send broadcast data\n", data->device_name);
+        fflush(stdout);
+        pthread_exit(NULL);
+    }
+    printf("%s: Broadcast data sent successfully\n", data->device_name);
+    fflush(stdout);
+
+    for (int i = 0; i < 50; i++) {
+        eproto_tick(&data->eproto_inst);
+        usleep(50000);
+    }
+
+    printf("%s process thread finished\n", data->device_name);
+    fflush(stdout);
+    pthread_exit(NULL);
+}
+
+void* device1_thread(void* arg) {
+    thread_data_t* data = (thread_data_t*)arg;
+    printf("%s thread started\n", data->device_name);
+    fflush(stdout);
+
     fixed_block_allocator_init();
 
-    eproto_user_functions_t user_functions = {.malloc = fixed_block_alloc,  // 使用固定块内存分配器
-                                              .free = fixed_block_free,  // 使用固定块内存分配器
+    eproto_user_functions_t user_functions = {.malloc = fixed_block_alloc,
+                                              .free = fixed_block_free,
                                               .signal_wait = device1_signal_wait,
                                               .signal_send = device1_signal_send,
                                               .lock = mock_lock,
@@ -279,64 +375,109 @@ void* device1_thread(void* arg) {
                                               .get_timestamp = mock_get_timestamp,
                                               .timeout_timestamp = 0};
 
-    static eproto_t device1_eproto;
-    eproto_error_t error = eproto_init(&device1_eproto, &user_functions);
+    eproto_error_t error = eproto_init(&data->eproto_inst, &user_functions);
     if (error != EPROTO_OK) {
-        printf("Device 1: Failed to initialize eProto\n");
+        printf("%s: Failed to initialize eProto\n", data->device_name);
+        fflush(stdout);
         pthread_exit(NULL);
     }
-    printf("Device 1: eProto initialized successfully\n");
-    g_device1_eproto = &device1_eproto;
+    printf("%s: eProto initialized successfully\n", data->device_name);
+    fflush(stdout);
+    g_device1_eproto = &data->eproto_inst;
 
     eproto_bus_t device1_bus = {.send = device1_bus_send, .receive = device1_bus_receive};
 
-    static uint8_t device1_rx_buffer[256];
-    error = eproto_add_bus(&device1_eproto, 0x01, &device1_bus, device1_rx_buffer, sizeof(device1_rx_buffer),
+    error = eproto_add_bus(&data->eproto_inst, 0x01, &device1_bus, data->rx_buffer, sizeof(data->rx_buffer),
                            "device1_bus", mock_wakeup, mock_status_callback, device1_receive_callback);
     if (error != EPROTO_OK) {
-        printf("Device 1: Failed to add bus\n");
+        printf("%s: Failed to add bus\n", data->device_name);
+        fflush(stdout);
         pthread_exit(NULL);
     }
-    printf("Device 1: Bus added successfully\n");
+    printf("%s: Bus added successfully\n", data->device_name);
+    fflush(stdout);
 
-    error = eproto_add_destination_device(&device1_eproto, 0x01, 0x02);
+    error = eproto_add_destination_device(&data->eproto_inst, 0x01, 0x02);
     if (error != EPROTO_OK) {
-        printf("Device 1: Failed to add destination device\n");
+        printf("%s: Failed to add destination device\n", data->device_name);
+        fflush(stdout);
         pthread_exit(NULL);
     }
-    printf("Device 1: Destination device 0x02 added successfully\n");
+    printf("%s: Destination device 0x02 added successfully\n", data->device_name);
+    fflush(stdout);
 
-    usleep(200000);
+    pthread_t receive_thread, process_thread;
 
-    uint8_t test_data[] = {0x11, 0x22, 0x33, 0x44, 0x55};
-    printf("Device 1: Sending test data (needs reply)...\n");
-    error = eproto_send(&device1_eproto, 0x02, test_data, sizeof(test_data), device1_send_callback, NULL, 0);
-    if (error != EPROTO_OK) {
-        printf("Device 1: Failed to send data\n");
+    data->thread_type = THREAD_TYPE_RECEIVE;
+
+    if (pthread_create(&receive_thread, NULL, device1_receive_thread, data) != 0) {
+        printf("%s: Failed to create receive thread\n", data->device_name);
         pthread_exit(NULL);
     }
-    printf("Device 1: Data sent successfully\n");
 
-    for (int i = 0; i < 30; i++) {
+    data->thread_type = THREAD_TYPE_PROCESS;
+
+    if (pthread_create(&process_thread, NULL, device1_process_thread, data) != 0) {
+        printf("%s: Failed to create process thread\n", data->device_name);
+        pthread_exit(NULL);
+    }
+
+    pthread_join(receive_thread, NULL);
+    pthread_join(process_thread, NULL);
+
+    eproto_destroy(&data->eproto_inst);
+
+    printf("%s thread finished\n", data->device_name);
+    pthread_exit(NULL);
+}
+
+// 设备2接收线程
+void* device2_receive_thread(void* arg) {
+    thread_data_t* data = (thread_data_t*)arg;
+    printf("%s receive thread started\n", data->device_name);
+    fflush(stdout);
+
+    g_current_thread_data = data;
+
+    for (int i = 0; i < 50; i++) {
         uint8_t rx_buffer[256];
-        uint16_t rx_count = device1_bus_receive(rx_buffer, sizeof(rx_buffer));
+        uint16_t rx_count = device2_bus_receive(rx_buffer, sizeof(rx_buffer));
         if (rx_count > 0) {
-            eproto_receive_data(&device1_eproto, 0x01, rx_buffer, rx_count);
+            eproto_receive_data(&data->eproto_inst, 0x02, rx_buffer, rx_count);
         }
-        eproto_tick(&device1_eproto);
         usleep(50000);
     }
 
-    printf("Device 1 thread finished\n");
+    printf("%s receive thread finished\n", data->device_name);
+    fflush(stdout);
+    pthread_exit(NULL);
+}
+
+// 设备2处理线程
+void* device2_process_thread(void* arg) {
+    thread_data_t* data = (thread_data_t*)arg;
+    printf("%s process thread started\n", data->device_name);
+    fflush(stdout);
+
+    g_current_thread_data = data;
+
+    for (int i = 0; i < 50; i++) {
+        eproto_tick(&data->eproto_inst);
+        usleep(50000);
+    }
+
+    printf("%s process thread finished\n", data->device_name);
+    fflush(stdout);
     pthread_exit(NULL);
 }
 
 void* device2_thread(void* arg) {
-    (void)arg;
-    printf("Device 2 thread started\n");
+    thread_data_t* data = (thread_data_t*)arg;
+    printf("%s thread started\n", data->device_name);
+    fflush(stdout);
 
-    eproto_user_functions_t user_functions = {.malloc = mock_malloc,  // 提供内存分配接口，使用外部内存分配器
-                                              .free = mock_free,  // 提供内存释放接口，使用外部内存分配器
+    eproto_user_functions_t user_functions = {.malloc = mock_malloc,
+                                              .free = mock_free,
                                               .signal_wait = device2_signal_wait,
                                               .signal_send = device2_signal_send,
                                               .lock = mock_lock,
@@ -344,65 +485,107 @@ void* device2_thread(void* arg) {
                                               .get_timestamp = mock_get_timestamp,
                                               .timeout_timestamp = 0};
 
-    static eproto_t device2_eproto;
-    eproto_error_t error = eproto_init(&device2_eproto, &user_functions);
+    eproto_error_t error = eproto_init(&data->eproto_inst, &user_functions);
     if (error != EPROTO_OK) {
-        printf("Device 2: Failed to initialize eProto\n");
+        printf("%s: Failed to initialize eProto\n", data->device_name);
+        fflush(stdout);
         pthread_exit(NULL);
     }
-    printf("Device 2: eProto initialized successfully\n");
-    g_device2_eproto = &device2_eproto;
+    printf("%s: eProto initialized successfully\n", data->device_name);
+    fflush(stdout);
+    g_device2_eproto = &data->eproto_inst;
 
     eproto_bus_t device2_bus = {.send = device2_bus_send, .receive = device2_bus_receive};
 
-    static uint8_t device2_rx_buffer[256];
-    error = eproto_add_bus(&device2_eproto, 0x02, &device2_bus, device2_rx_buffer, sizeof(device2_rx_buffer),
+    error = eproto_add_bus(&data->eproto_inst, 0x02, &device2_bus, data->rx_buffer, sizeof(data->rx_buffer),
                            "device2_bus", mock_wakeup, mock_status_callback, device2_receive_callback);
     if (error != EPROTO_OK) {
-        printf("Device 2: Failed to add bus\n");
+        printf("%s: Failed to add bus\n", data->device_name);
+        fflush(stdout);
         pthread_exit(NULL);
     }
-    printf("Device 2: Bus added successfully\n");
+    printf("%s: Bus added successfully\n", data->device_name);
+    fflush(stdout);
 
-    error = eproto_add_destination_device(&device2_eproto, 0x02, 0x01);
+    error = eproto_add_destination_device(&data->eproto_inst, 0x02, 0x01);
     if (error != EPROTO_OK) {
-        printf("Device 2: Failed to add destination device\n");
+        printf("%s: Failed to add destination device\n", data->device_name);
+        fflush(stdout);
         pthread_exit(NULL);
     }
-    printf("Device 2: Destination device 0x01 added successfully\n");
+    printf("%s: Destination device 0x01 added successfully\n", data->device_name);
+    fflush(stdout);
 
-    for (int i = 0; i < 30; i++) {
-        uint8_t rx_buffer[256];
-        uint16_t rx_count = device2_bus_receive(rx_buffer, sizeof(rx_buffer));
-        if (rx_count > 0) {
-            eproto_receive_data(&device2_eproto, 0x02, rx_buffer, rx_count);
-        }
-        eproto_tick(&device2_eproto);
-        usleep(50000);
+    pthread_t receive_thread, process_thread;
+
+    data->thread_type = THREAD_TYPE_RECEIVE;
+
+    if (pthread_create(&receive_thread, NULL, device2_receive_thread, data) != 0) {
+        printf("%s: Failed to create receive thread\n", data->device_name);
+        pthread_exit(NULL);
     }
 
-    printf("Device 2 thread finished\n");
+    data->thread_type = THREAD_TYPE_PROCESS;
+
+    if (pthread_create(&process_thread, NULL, device2_process_thread, data) != 0) {
+        printf("%s: Failed to create process thread\n", data->device_name);
+        pthread_exit(NULL);
+    }
+
+    pthread_join(receive_thread, NULL);
+    pthread_join(process_thread, NULL);
+
+    eproto_destroy(&data->eproto_inst);
+
+    printf("%s thread finished\n", data->device_name);
     pthread_exit(NULL);
 }
 
 int main() {
     printf("Simple Test: Two devices direct communication\n");
     printf("=============================================\n\n");
+    fflush(stdout);
+
+    thread_data_t* device1_data = (thread_data_t*)malloc(sizeof(thread_data_t));
+    if (!device1_data) {
+        printf("Failed to allocate memory for device 1 data\n");
+        return 1;
+    }
+    memset(device1_data, 0, sizeof(thread_data_t));
+    device1_data->device_address = 0x01;
+    device1_data->device_name = "Device 1";
+
+    thread_data_t* device2_data = (thread_data_t*)malloc(sizeof(thread_data_t));
+    if (!device2_data) {
+        printf("Failed to allocate memory for device 2 data\n");
+        free(device1_data);
+        return 1;
+    }
+    memset(device2_data, 0, sizeof(thread_data_t));
+    device2_data->device_address = 0x02;
+    device2_data->device_name = "Device 2";
 
     pthread_t thread1, thread2;
 
-    if (pthread_create(&thread1, NULL, device1_thread, NULL) != 0) {
+    if (pthread_create(&thread1, NULL, device1_thread, device1_data) != 0) {
         printf("Failed to create device 1 thread\n");
+        free(device1_data);
+        free(device2_data);
         return 1;
     }
 
-    if (pthread_create(&thread2, NULL, device2_thread, NULL) != 0) {
+    if (pthread_create(&thread2, NULL, device2_thread, device2_data) != 0) {
         printf("Failed to create device 2 thread\n");
+        free(device1_data);
+        free(device2_data);
         return 1;
     }
 
     pthread_join(thread1, NULL);
     pthread_join(thread2, NULL);
+
+    free(device1_data);
+    free(device2_data);
 
     printf("\nAll tests completed\n");
     return 0;

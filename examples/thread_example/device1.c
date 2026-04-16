@@ -161,6 +161,19 @@ void* device1_process_thread(void* arg) {
     }
     printf("%s: Data sent to device 3 successfully\n", data->device_name);
 
+    // 等待一段时间，确保前面的数据包处理完成
+    usleep(100000);
+
+    // 发送广播数据
+    uint8_t broadcast_data[] = {0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+    printf("%s: Sending broadcast data to all devices...\n", data->device_name);
+    error = eproto_send_ex(&data->eproto_inst, 0xFF, broadcast_data, sizeof(broadcast_data), device1_send_callback, data, 1, 0, 0);
+    if (error != EPROTO_OK) {
+        printf("%s: Failed to send broadcast data\n", data->device_name);
+        pthread_exit(NULL);
+    }
+    printf("%s: Broadcast data sent successfully\n", data->device_name);
+
     // 定期处理协议
     for (int i = 0; i < 50; i++) {
         eproto_tick(&data->eproto_inst);

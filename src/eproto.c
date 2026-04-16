@@ -118,6 +118,14 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
                                 EPROTO_BUS_NAME(current_bus_mgr), bus_mgr->self_address);
             }
         }
+        
+        // 调用当前总线的接收回调函数，通知用户收到了广播包
+        if (current_bus_mgr->receive_callback) {
+            EPROTO_DEBUG_LOG("%s: Calling receive callback for broadcast\n", EPROTO_BUS_NAME(current_bus_mgr));
+            current_bus_mgr->receive_callback(frame->source_address, frame->packet_id, frame->data, frame->length);
+            // 广播包不更新last_id，避免影响重发检测
+        }
+        
         return;
     }
 
@@ -518,12 +526,35 @@ static bool eproto_handle_retransmit(eproto_t* eproto, eproto_bus_manager_t* bus
             // 达到最大重发次数，调用回调并移除
             EPROTO_WARNING_LOG("%s: Max retry reached for packet %d\n", EPROTO_BUS_NAME(bus_mgr),
                                bus_mgr->current_send_node->packet_id);
+            
+            // 保存当前节点的包类型
+            uint8_t packet_type = bus_mgr->current_send_node->packet_type;
+            
             if (bus_mgr->current_send_node->callback) {
                 bus_mgr->current_send_node->callback(EPROTO_SEND_TIMEOUT, bus_mgr->current_send_node->packet_id, NULL,
                                                      0, bus_mgr->current_send_node->private_data);
             }
             eproto_packet_node_destroy(eproto->user_functions.free, bus_mgr->current_send_node);
             bus_mgr->current_send_node = NULL;
+            
+            // 只有当当前节点是握手包时，才处理发送队列中的节点
+            if (packet_type & EPROTO_PACKET_TYPE_HANDSHAKE_FLAG) {
+                // 检查发送队列是否不为空
+                if (!eproto_list_empty(&bus_mgr->device_queues.send_queue)) {
+                    // 取出第一个节点
+                    eproto_node_t* send_node = eproto_packet_node_remove_first(&bus_mgr->device_queues.send_queue);
+                    if (send_node) {
+                        // 调用回调告诉用户发送超时
+                        if (send_node->callback) {
+                            send_node->callback(EPROTO_SEND_TIMEOUT, send_node->packet_id, NULL,
+                                               0, send_node->private_data);
+                        }
+                        // 销毁取出来的节点
+                        eproto_packet_node_destroy(eproto->user_functions.free, send_node);
+                    }
+                }
+            }
+            
             return false;  // 继续处理该总线
         }
     } else {
@@ -721,38 +752,7 @@ static void eproto_process_wait_queue(eproto_t* eproto) {
 // 处理用户发送包
 static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame,
                                             uint8_t is_retransmit, uint8_t is_handshake) {
-    // 检查是否是广播包
-    if (frame->destination_address == EPROTO_BROADCAST_ADDRESS) {
-        EPROTO_INFO_LOG("%s: Received broadcast packet, skipping protocol ACK\n", EPROTO_BUS_NAME(bus_mgr));
-        
-        // 广播包不发送协议层应答
-        
-        if (is_handshake) {
-            // 处理握手包
-            EPROTO_INFO_LOG("%s: Received handshake packet\n", EPROTO_BUS_NAME(bus_mgr));
 
-            // 清除握手标志（收到握手包清一次）
-            bus_mgr->handshake_required = 0;
-            EPROTO_INFO_LOG("%s: Handshake flag cleared (received handshake packet)\n", EPROTO_BUS_NAME(bus_mgr));
-
-            // 调用状态回调告诉用户握手成功
-            if (bus_mgr->status_callback) {
-                bus_mgr->status_callback(EPROTO_STATUS_HANDSHAKE_SUCCESS, NULL, 0);
-            }
-
-            // 握手改为不需要回复包，直接返回
-            return;
-        }
-
-        // 广播包不处理重发逻辑
-        // 直接调用接收回调函数
-        if (bus_mgr->receive_callback) {
-            EPROTO_DEBUG_LOG("%s: Calling receive callback for broadcast\n", EPROTO_BUS_NAME(bus_mgr));
-            bus_mgr->receive_callback(frame->source_address, frame->packet_id, frame->data, frame->length);
-            // 广播包不更新last_id，避免影响重发检测
-        }
-        return;
-    }
 
     // 发送协议层应答包
     EPROTO_INFO_LOG("%s: Received user send packet, sending protocol ACK\n", EPROTO_BUS_NAME(bus_mgr));
@@ -918,8 +918,7 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
 
         if (error == EPROTO_FRAME_PARSER_OK) {
             // 检查设备地址是否匹配
-            if (frame.destination_address != bus_mgr->self_address &&
-                frame.destination_address != EPROTO_BROADCAST_ADDRESS) {
+            if (frame.destination_address != bus_mgr->self_address) {
                 // 根据包类型处理转发
                 if (frame.packet_type == EPROTO_PACKET_TYPE_PROTOCOL_ACK) {
                     // 转发协议应答包
