@@ -52,8 +52,6 @@ typedef struct {
 typedef struct {
     eproto_bus_t* bus;               // 总线接口
     eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
-    uint8_t* rx_buffer_addr;         // 接收缓冲区地址
-    uint16_t rx_buffer_size;         // 接收缓冲区大小
     uint8_t self_address;            // 对应的设备地址
     const char* name;                // 总线名称，用于日志和调试
 
