@@ -18,9 +18,13 @@ EPROTO_SRCS = \
 	../../src/eproto_ring_buffer.c \
 	../../src/eproto_crc16.c
 
+# Build directory
+BUILDDIR = build
+
 # Object files
-OBJ_SERIAL = $(SRC_SERIAL:.c=.o)
-EPROTO_OBJS = $(notdir $(EPROTO_SRCS:.c=.o))
+OBJ_SERIAL = $(addprefix $(BUILDDIR)/, $(SRC_SERIAL:.c=.o))
+EPROTO_OBJS = $(addprefix $(BUILDDIR)/, $(notdir $(EPROTO_SRCS:.c=.o)))
+DEVICE_OBJS = $(addprefix $(BUILDDIR)/, device_a.o device_b.o device_c.o bus_config_macro_a.o bus_config_macro_b.o bus_config_macro_c.o)
 
 # Target devices and output directory
 DEVICES = device_a device_b device_c
@@ -31,48 +35,61 @@ TARGETS = $(addprefix $(BINDIR)/, $(DEVICES))
 .PHONY: all clean
 all: $(TARGETS)
 
+# Create build directory
+$(BUILDDIR):
+	@mkdir -p $(BUILDDIR)
+
 # Build eProto library objects
-%.o: ../../src/%.c
+$(BUILDDIR)/%.o: ../../src/%.c
+	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Build serial common module
-$(OBJ_SERIAL): $(SRC_SERIAL)
+$(OBJ_SERIAL): $(BUILDDIR)/serial_common.o
+
+$(BUILDDIR)/serial_common.o: $(SRC_SERIAL)
+	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Build device A
-$(BINDIR)/device_a: device_a.o bus_config_macro_a.o $(OBJ_SERIAL) $(EPROTO_OBJS)
+$(BINDIR)/device_a: $(BUILDDIR) $(BUILDDIR)/device_a.o $(BUILDDIR)/bus_config_macro_a.o $(OBJ_SERIAL) $(EPROTO_OBJS)
 	@mkdir -p $(BINDIR)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $(BUILDDIR)/device_a.o $(BUILDDIR)/bus_config_macro_a.o $(OBJ_SERIAL) $(EPROTO_OBJS) $(LDFLAGS)
 
-device_a.o: $(SRC_DEVICE)
+$(BUILDDIR)/device_a.o: $(SRC_DEVICE)
+	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -DDEVICE_ID=65 -c $< -o $@
 
-bus_config_macro_a.o: $(SRC_BUS_CONFIG)
+$(BUILDDIR)/bus_config_macro_a.o: $(SRC_BUS_CONFIG)
+	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -DBUS_CONFIGS="BUS_CONFIG(0x01, \"bus1\", 2, 0x02, 0x04, 0, 0)" -c $< -o $@
 
 # Build device B
-$(BINDIR)/device_b: device_b.o bus_config_macro_b.o $(OBJ_SERIAL) $(EPROTO_OBJS)
+$(BINDIR)/device_b: $(BUILDDIR) $(BUILDDIR)/device_b.o $(BUILDDIR)/bus_config_macro_b.o $(OBJ_SERIAL) $(EPROTO_OBJS)
 	@mkdir -p $(BINDIR)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $(BUILDDIR)/device_b.o $(BUILDDIR)/bus_config_macro_b.o $(OBJ_SERIAL) $(EPROTO_OBJS) $(LDFLAGS)
 
-device_b.o: $(SRC_DEVICE)
+$(BUILDDIR)/device_b.o: $(SRC_DEVICE)
+	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -DDEVICE_ID=66 -c $< -o $@
 
-bus_config_macro_b.o: $(SRC_BUS_CONFIG)
+$(BUILDDIR)/bus_config_macro_b.o: $(SRC_BUS_CONFIG)
+	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -DBUS_CONFIGS="BUS_CONFIG(0x02, \"bus1\", 1, 0x01, 0, 0, 0), BUS_CONFIG(0x03, \"bus2\", 1, 0x04, 0, 0, 0)" -c $< -o $@
 
 # Build device C
-$(BINDIR)/device_c: device_c.o bus_config_macro_c.o $(OBJ_SERIAL) $(EPROTO_OBJS)
+$(BINDIR)/device_c: $(BUILDDIR) $(BUILDDIR)/device_c.o $(BUILDDIR)/bus_config_macro_c.o $(OBJ_SERIAL) $(EPROTO_OBJS)
 	@mkdir -p $(BINDIR)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $(BUILDDIR)/device_c.o $(BUILDDIR)/bus_config_macro_c.o $(OBJ_SERIAL) $(EPROTO_OBJS) $(LDFLAGS)
 
-device_c.o: $(SRC_DEVICE)
+$(BUILDDIR)/device_c.o: $(SRC_DEVICE)
+	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -DDEVICE_ID=67 -c $< -o $@
 
-bus_config_macro_c.o: $(SRC_BUS_CONFIG)
+$(BUILDDIR)/bus_config_macro_c.o: $(SRC_BUS_CONFIG)
+	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -DBUS_CONFIGS="BUS_CONFIG(0x04, \"bus1\", 2, 0x02, 0x01, 0, 0)" -c $< -o $@
 
 # Clean target
 clean:
-	rm -f $(TARGETS)
-	rm -f *.o
+	rm -rf $(BUILDDIR) $(TARGETS)
