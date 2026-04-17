@@ -12,6 +12,10 @@
 // eProto - 嵌入式协议（Embedded Protocol）
 // "e"代表嵌入式（Embedded），"Proto"代表协议（Protocol）
 
+// 协议帧格式定义
+// 帧结构：| 帧头(1) | 版本号(1) | 长度(2) | 包类型(1) | 原地址(1) | 设备地址(1)
+// | 包ID(2) | 数据(n) | CRC(2) |
+
 // 总线接口
 typedef struct {
     void (*send)(uint8_t* data, uint16_t length);
@@ -38,10 +42,6 @@ typedef enum {
 
 // 包类型名称数组
 extern const char* eproto_packet_type_names[];
-
-// 协议帧格式定义
-// 帧结构：| 帧头(1) | 版本号(1) | 长度(2) | 包类型(1) | 原地址(1) | 设备地址(1)
-// | 包ID(2) | 数据(n) | CRC(2) |
 
 // 帧结构 typedef - 定义在 frame_parser.h 中
 

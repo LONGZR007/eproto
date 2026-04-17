@@ -25,6 +25,10 @@ typedef struct eproto_frame {
     uint8_t* data;
 } eproto_frame_t;
 
+// 协议帧格式定义
+// 帧结构：| 帧头(1) | 版本号(1) | 长度(2) | 包类型(1) | 原地址(1) | 设备地址(1)
+// | 包ID(2) | 数据(n) | CRC(2) |
+
 typedef enum {
     EPROTO_FRAME_PARSER_OK = 0,
     EPROTO_FRAME_PARSER_ERROR_NO_HEADER,
