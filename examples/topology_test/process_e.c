@@ -263,7 +263,7 @@ int main(void) {
 
     uint8_t e_rx_buffer11[256];
     error = eproto_add_bus(&g_eproto, 0x0B, &e_bus11, e_rx_buffer11, sizeof(e_rx_buffer11), "e_bus11", mock_wakeup,
-                           mock_status_callback, e_receive_callback);
+                           mock_status_callback);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 11\n");
         return 1;
@@ -275,7 +275,7 @@ int main(void) {
 
     uint8_t e_rx_buffer12[256];
     error = eproto_add_bus(&g_eproto, 0x0C, &e_bus12, e_rx_buffer12, sizeof(e_rx_buffer12), "e_bus12", mock_wakeup,
-                           mock_status_callback, e_receive_callback);
+                           mock_status_callback);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 12\n");
         return 1;
