@@ -54,7 +54,7 @@ typedef struct {
 typedef struct {
     eproto_bus_t* bus;               // 总线接口
     eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
-    uint8_t self_address;            // 对应的设备地址
+    uint8_t self_addr;            // 对应的设备地址
     const char* name;                // 总线名称，用于日志和调试
 
     // 帧解析器
@@ -138,7 +138,7 @@ void eproto_destroy(eproto_t* eproto);
 /**
  * 向eProto实例添加总线
  * @param eproto            指向eProto实例的指针
- * @param self_address      总线的自身地址
+ * @param self_addr      总线的自身地址
  * @param bus               总线接口结构体
  * @param rx_buffer         接收缓冲区
  * @param rx_buffer_size    接收缓冲区大小
@@ -147,24 +147,24 @@ void eproto_destroy(eproto_t* eproto);
  * @param status_callback   状态回调函数
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
  */
-eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus_t* bus, uint8_t* rx_buffer,
+eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_t* bus, uint8_t* rx_buffer,
                            uint16_t rx_buffer_size, const char* name, eproto_handshake_callback_t handshake_callback,
                            eproto_status_callback_t status_callback);
 
 /**
  * 向指定总线添加目标设备地址
  * @param eproto             指向eProto实例的指针
- * @param bus_address        总线地址
- * @param destination_address 目标设备地址
+ * @param bus_addr        总线地址
+ * @param destination_addr 目标设备地址
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
  * @note                    当启用握手功能时，第一个添加的设备将被用于握手操作，后续添加的设备仅用于数据通信
  */
-eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t bus_address, uint8_t destination_address);
+eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t bus_addr, uint8_t destination_addr);
 
 /**
  * 主动发送数据
  * @param eproto                指向eProto实例的指针
- * @param destination_address   目标设备地址
+ * @param destination_addr   目标设备地址
  * @param data                  要发送的数据
  * @param length                数据长度
  * @param callback              发送完成后的回调函数
@@ -174,13 +174,13 @@ eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t bus_addre
  * @note                data
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
-eproto_error_t eproto_send(eproto_t* eproto, uint8_t destination_address, uint8_t* data, uint16_t length,
+eproto_error_t eproto_send(eproto_t* eproto, uint8_t destination_addr, uint8_t* data, uint16_t length,
                            eproto_packet_callback_t callback, void* private_data, uint8_t no_wait);
 
 /**
  * 发送用户回复包
  * @param eproto                指向eProto实例的指针
- * @param destination_address   目标设备地址
+ * @param destination_addr   目标设备地址
  * @param packet_id             包ID
  * @param data                  要发送的数据
  * @param length                数据长度
@@ -188,13 +188,13 @@ eproto_error_t eproto_send(eproto_t* eproto, uint8_t destination_address, uint8_
  * @note                data
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
-eproto_error_t eproto_send_user_reply(eproto_t* eproto, uint8_t destination_address, uint16_t packet_id, uint8_t* data,
+eproto_error_t eproto_send_user_reply(eproto_t* eproto, uint8_t destination_addr, uint16_t packet_id, uint8_t* data,
                                       uint16_t length);
 
 /**
  * 主动发送数据（扩展接口，支持自定义超时时间和最大重发次数）
  * @param eproto                指向eProto实例的指针
- * @param destination_address   目标设备地址
+ * @param destination_addr   目标设备地址
  * @param data                  要发送的数据
  * @param length                数据长度
  * @param callback              发送完成后的回调函数
@@ -206,14 +206,14 @@ eproto_error_t eproto_send_user_reply(eproto_t* eproto, uint8_t destination_addr
  * @note                    data
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
-eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t destination_address, uint8_t* data, uint16_t length,
+eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t destination_addr, uint8_t* data, uint16_t length,
                               eproto_packet_callback_t callback, void* private_data, uint8_t no_wait,
                               uint8_t max_retry_count, uint32_t timeout_ms);
 
 /**
  * 发送用户回复包（扩展接口，支持自定义超时时间和最大重发次数）
  * @param eproto                指向eProto实例的指针
- * @param destination_address   目标设备地址
+ * @param destination_addr   目标设备地址
  * @param packet_id             包ID
  * @param data                  要发送的数据
  * @param length                数据长度
@@ -223,36 +223,36 @@ eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t destination_address, uin
  * @note                    data
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
-eproto_error_t eproto_send_user_reply_ex(eproto_t* eproto, uint8_t destination_address, uint16_t packet_id, uint8_t* data,
+eproto_error_t eproto_send_user_reply_ex(eproto_t* eproto, uint8_t destination_addr, uint16_t packet_id, uint8_t* data,
                                          uint16_t length, uint8_t max_retry_count, uint32_t timeout_ms);
 
 #ifdef EPROTO_ENABLE_HANDSHAKE
 /**
  * 设置总线握手标志
  * @param eproto        指向eProto实例的指针
- * @param bus_address   总线地址
+ * @param bus_addr   总线地址
  * @param required      是否需要握手（1需要，0不需要）
  * @return              操作结果，EPROTO_OK表示成功，其他值表示错误
  */
-eproto_error_t eproto_set_handshake(eproto_t* eproto, uint8_t bus_address, uint8_t required);
+eproto_error_t eproto_set_handshake(eproto_t* eproto, uint8_t bus_addr, uint8_t required);
 
 /**
  * 执行总线握手
  * @param eproto        指向eProto实例的指针
- * @param bus_address   总线地址
+ * @param bus_addr   总线地址
  * @return              操作结果，EPROTO_OK表示成功，其他值表示错误
  */
-eproto_error_t eproto_handshake(eproto_t* eproto, uint8_t bus_address);
+eproto_error_t eproto_handshake(eproto_t* eproto, uint8_t bus_addr);
 #endif
 
 /**
  * 接收数据处理（由中断或轮询调用）
  * @param eproto       指向eProto实例的指针
- * @param bus_address  总线地址
+ * @param bus_addr  总线地址
  * @param data         接收到的数据指针
  * @param len          接收到的数据长度
  */
-void eproto_receive_data(eproto_t* eproto, uint8_t bus_address, const uint8_t* data, size_t len);
+void eproto_receive_data(eproto_t* eproto, uint8_t bus_addr, const uint8_t* data, size_t len);
 
 /**
  * 等待信号
@@ -271,9 +271,9 @@ uint32_t eproto_tick(eproto_t* eproto);
 /**
  * 获取指定总线的状态
  * @param eproto       指向eProto实例的指针
- * @param bus_address  总线地址
+ * @param bus_addr  总线地址
  * @return            状态值，0表示不需要握手，1表示需要握手
  */
-uint8_t eproto_get_status(eproto_t* eproto, uint8_t bus_address);
+uint8_t eproto_get_status(eproto_t* eproto, uint8_t bus_addr);
 
 #endif  // EPROTO_H
