@@ -15,4 +15,5 @@ build/
 *.temp
 push_to_gitee.py
 .trae/
+bin/
 
