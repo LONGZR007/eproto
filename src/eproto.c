@@ -28,7 +28,7 @@ static void eproto_process_wait_queue(eproto_t* eproto);
 static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr);
 static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current_bus_mgr, eproto_frame_t* frame);
 static void eproto_forward_protocol_ack(eproto_t* eproto, eproto_bus_manager_t* current_bus_mgr, eproto_frame_t* frame);
-static eproto_error_t eproto_send_frame(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, uint8_t source_addr,
+static eproto_error_t eproto_send_frame(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, uint8_t src_addr,
                                         uint8_t dst_addr, uint16_t packet_id, uint8_t* data, uint16_t length,
                                         uint8_t packet_type);
 static eproto_error_t eproto_send_response(eproto_t* eproto, uint8_t bus_addr, uint16_t packet_id, uint8_t* data,
@@ -521,7 +521,7 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
             EPROTO_INFO_LOG(
                 "%s: Received valid frame from %02X, packet ID: %d, "
                 "type: %s\n",
-                EPROTO_BUS_NAME(bus_mgr), frame.source_addr, frame.packet_id,
+                EPROTO_BUS_NAME(bus_mgr), frame.src_addr, frame.packet_id,
                 eproto_packet_type_names[actual_packet_type]);
 
             // 检查是否是重发包
@@ -568,7 +568,7 @@ static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager
 
     // 发送协议层应答包
     EPROTO_INFO_LOG("%s: Received user send packet, sending protocol ACK\n", EPROTO_BUS_NAME(bus_mgr));
-    eproto_send_response(eproto, frame->source_addr, frame->packet_id, NULL, 0, EPROTO_PACKET_TYPE_PROTOCOL_ACK);
+    eproto_send_response(eproto, frame->src_addr, frame->packet_id, NULL, 0, EPROTO_PACKET_TYPE_PROTOCOL_ACK);
 
 #ifdef EPROTO_ENABLE_HANDSHAKE
     if (is_handshake) {
@@ -670,7 +670,7 @@ static void eproto_process_protocol_ack_packet(eproto_t* eproto, eproto_bus_mana
 static void eproto_process_user_reply_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame) {
     // 发送协议层应答包
     EPROTO_INFO_LOG("%s: Received user reply packet, sending protocol ACK\n", EPROTO_BUS_NAME(bus_mgr));
-    eproto_send_response(eproto, frame->source_addr, frame->packet_id, NULL, 0, EPROTO_PACKET_TYPE_PROTOCOL_ACK);
+    eproto_send_response(eproto, frame->src_addr, frame->packet_id, NULL, 0, EPROTO_PACKET_TYPE_PROTOCOL_ACK);
 
     // 从等待队列中移除
     eproto_node_t* reply_node = eproto_packet_node_remove(&bus_mgr->device_queues.wait_queue, frame->packet_id);
@@ -732,7 +732,7 @@ static bool eproto_handle_retransmit(eproto_t* eproto, eproto_bus_manager_t* bus
             // 重发时添加重发标志
             uint8_t retransmit_packet_type =
                 bus_mgr->current_send_node->packet_type | EPROTO_PACKET_TYPE_RETRANSMIT_FLAG;
-            eproto_send_frame(eproto, bus_mgr, bus_mgr->current_send_node->source_addr,
+            eproto_send_frame(eproto, bus_mgr, bus_mgr->current_send_node->src_addr,
                               bus_mgr->current_send_node->dst_addr, bus_mgr->current_send_node->packet_id,
                               bus_mgr->current_send_node->data, bus_mgr->current_send_node->data_length,
                               retransmit_packet_type);
@@ -800,7 +800,7 @@ static void eproto_send_normal_packet(eproto_t* eproto, eproto_bus_manager_t* bu
 
     // 发送数据
     eproto_error_t error =
-        eproto_send_frame(eproto, bus_mgr, send_node->source_addr, send_node->dst_addr,
+        eproto_send_frame(eproto, bus_mgr, send_node->src_addr, send_node->dst_addr,
                           send_node->packet_id, send_node->data, send_node->data_length, send_node->packet_type);
     if (error != EPROTO_OK) {
         // 发送失败，调用回调
@@ -954,7 +954,7 @@ static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t*
 
     // 直接发送握手包
     eproto_error_t error = eproto_send_frame(
-        eproto, bus_mgr, handshake_node->source_addr, handshake_node->dst_addr, handshake_node->packet_id,
+        eproto, bus_mgr, handshake_node->src_addr, handshake_node->dst_addr, handshake_node->packet_id,
         handshake_node->data, handshake_node->data_length, handshake_node->packet_type);
 
     if (error == EPROTO_OK) {
@@ -1047,7 +1047,7 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
             
             // 创建新的广播包节点，保持原始信息不变
             eproto_node_t* forward_node = eproto_packet_node_create(
-                eproto->user_functions.malloc, eproto->user_functions.free, frame->source_addr,
+                eproto->user_functions.malloc, eproto->user_functions.free, frame->src_addr,
                 EPROTO_BROADCAST_ADDRESS, frame->packet_id, frame->data, frame->length, NULL, NULL,
                 1,                          // no_wait - 转发包不需要等待回调
                 frame->packet_type, 0, 0);  // 转发包不重发，无超时
@@ -1087,7 +1087,7 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
 
         // 创建新的数据包节点，保持原始信息不变
         eproto_node_t* forward_node = eproto_packet_node_create(
-            eproto->user_functions.malloc, eproto->user_functions.free, frame->source_addr,
+            eproto->user_functions.malloc, eproto->user_functions.free, frame->src_addr,
             frame->dst_addr, frame->packet_id, frame->data, frame->length, NULL, NULL,
             1,                          // no_wait - 转发包不需要等待回调
             frame->packet_type, 0, 0);  // 转发包不重发，无超时
@@ -1131,7 +1131,7 @@ static void eproto_forward_protocol_ack(eproto_t* eproto, eproto_bus_manager_t* 
                         EPROTO_BUS_NAME(current_bus_mgr), frame->dst_addr);
 
         // 直接发送协议应答包，不需要放入队列
-        eproto_send_frame(eproto, destination_bus_mgr, frame->source_addr, frame->dst_addr,
+        eproto_send_frame(eproto, destination_bus_mgr, frame->src_addr, frame->dst_addr,
                           frame->packet_id, frame->data, frame->length, frame->packet_type);
         EPROTO_INFO_LOG("%s: Forwarded protocol ACK successfully\n", EPROTO_BUS_NAME(current_bus_mgr));
     } else {
@@ -1145,7 +1145,7 @@ static void eproto_forward_protocol_ack(eproto_t* eproto, eproto_bus_manager_t* 
 // ====================================
 
 // 发送数据帧
-static eproto_error_t eproto_send_frame(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, uint8_t source_addr,
+static eproto_error_t eproto_send_frame(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, uint8_t src_addr,
                                         uint8_t dst_addr, uint16_t packet_id, uint8_t* data, uint16_t length,
                                         uint8_t packet_type) {
     if (!bus_mgr || !eproto)
@@ -1158,7 +1158,7 @@ static eproto_error_t eproto_send_frame(eproto_t* eproto, eproto_bus_manager_t* 
     }
 
     uint16_t frame_length =
-        eproto_frame_parser_pack_frame(send_buffer, buffer_size, EPROTO_FRAME_HEADER, source_addr,
+        eproto_frame_parser_pack_frame(send_buffer, buffer_size, EPROTO_FRAME_HEADER, src_addr,
                                        dst_addr, packet_id, packet_type, data, length);
 
     if (frame_length == 0) {

@@ -66,7 +66,7 @@ typedef struct {
     eproto_frame_parser_t parser;
     // 接口函数
     eproto_status_callback_t status_callback;
-    void (*receive_callback)(uint8_t source_addr, uint16_t packet_id, uint8_t* data, uint16_t length);
+    void (*receive_callback)(uint8_t src_addr, uint16_t packet_id, uint8_t* data, uint16_t length);
     // 状态变量
     uint16_t next_packet_id;
     uint16_t last_id;  // 上次处理的包ID，用于重发包检测
@@ -511,8 +511,8 @@ void my_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* 
 }
 
 // 接收回调函数
-void my_receive_callback(uint8_t source_addr, uint16_t packet_id, uint8_t* data, uint16_t length) {
-    printf("Received data from device 0x%02X, packet ID: %d\n", source_addr, packet_id);
+void my_receive_callback(uint8_t src_addr, uint16_t packet_id, uint8_t* data, uint16_t length) {
+    printf("Received data from device 0x%02X, packet ID: %d\n", src_addr, packet_id);
     // 处理接收到的数据
     // 可以调用 eproto_send_user_reply 发送回复
 }

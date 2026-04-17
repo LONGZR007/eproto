@@ -19,7 +19,7 @@ typedef struct eproto_frame {
     uint8_t version;
     uint16_t length;
     eproto_packet_type_t packet_type;
-    uint8_t source_addr;
+    uint8_t src_addr;
     uint8_t dst_addr;
     uint16_t packet_id;
     uint8_t* data;
@@ -66,7 +66,7 @@ eproto_frame_parser_error_t eproto_frame_parser_parse(eproto_ring_buffer_t* rb, 
 void eproto_frame_parser_free_result(eproto_frame_parser_t* parser, eproto_frame_t* result);
 
 uint16_t eproto_frame_parser_pack_frame(uint8_t* buffer, uint16_t buffer_size, uint8_t frame_header,
-                                        uint8_t source_addr, uint8_t dst_addr, uint16_t packet_id,
+                                        uint8_t src_addr, uint8_t dst_addr, uint16_t packet_id,
                                         uint8_t packet_type, uint8_t* data, uint16_t data_length);
 
 #endif
