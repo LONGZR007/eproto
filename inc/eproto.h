@@ -146,8 +146,8 @@ void eproto_destroy(eproto_t* eproto);
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
  */
 eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus_t* bus, uint8_t* rx_buffer,
-                              uint16_t rx_buffer_size, const char* name, void (*handshake_callback)(void),
-                              void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length));
+                           uint16_t rx_buffer_size, const char* name, void (*handshake_callback)(void),
+                           void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length));
 
 /**
  * 向指定总线添加目标设备地址
