@@ -128,12 +128,12 @@ void timer_interrupt_handler(void) {
 
 项目提供了多个示例代码，展示了不同场景下的使用方法：
 
-- **simple_test**：简单的两设备通信测试
-- **thread_example**：多线程环境下的使用示例
-- **topology_test**：复杂网络拓扑测试
-- **serial_three_devices**：串行三设备通信示例
+- [**simple_test**](file:///workspace/examples/simple_test/readme.md)：简单的两设备通信测试
+- [**thread_example**](file:///workspace/examples/thread_example/readme.md)：多线程环境下的使用示例
+- [**topology_test**](file:///workspace/examples/topology_test/readme.md)：复杂网络拓扑测试
+- [**serial_three_devices**](file:///workspace/examples/serial_three_devices/readme.md)：串行三设备通信示例
 
-详细使用说明请参考各示例目录下的 [readme.md](file:///workspace/examples/simple_test/readme.md) 文件。
+详细使用说明请参考各示例目录下的readme.md文件。
 
 ## 移植指南
 
