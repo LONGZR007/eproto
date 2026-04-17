@@ -68,8 +68,6 @@ eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_funct
     // 初始化总线管理器
     for (uint8_t i = 0; i < EPROTO_MAX_BUS_COUNT; i++) {
         eproto->bus_managers[i].bus = NULL;
-        eproto->bus_managers[i].rx_buffer_addr = NULL;
-        eproto->bus_managers[i].rx_buffer_size = 0;
         eproto->bus_managers[i].self_address = 0;
         eproto->bus_managers[i].name = NULL;
 
@@ -188,8 +186,6 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus
     eproto->bus_managers[manager_index].destination_device_count = 0;
 
     // 初始化接收缓冲区（必须由用户提供）
-    eproto->bus_managers[manager_index].rx_buffer_addr = rx_buffer;
-    eproto->bus_managers[manager_index].rx_buffer_size = rx_buffer_size;
     eproto_ring_buffer_init(&eproto->bus_managers[manager_index].rx_buffer, rx_buffer, rx_buffer_size);
 
     // 初始化帧解析器
