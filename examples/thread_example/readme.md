@@ -233,6 +233,6 @@ All tests completed
 
 ## 相关文档
 
-- [根目录 README.md](file:///workspace/README.md)：项目整体介绍
-- [协议文档](file:///workspace/docs/PROTOCOL.md)：详细介绍协议帧格式和通信流程
-- [API参考](file:///workspace/docs/API_REFERENCE.md)：详细的API使用说明
+- [根目录 README.md](../../README.md)：项目整体介绍
+- [协议文档](../../docs/PROTOCOL.md)：详细介绍协议帧格式和通信流程
+- [API参考](../../docs/API_REFERENCE.md)：详细的API使用说明

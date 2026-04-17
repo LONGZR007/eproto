@@ -128,10 +128,10 @@ void timer_interrupt_handler(void) {
 
 项目提供了多个示例代码，展示了不同场景下的使用方法：
 
-- [**simple_test**](file:///workspace/examples/simple_test/readme.md)：简单的两设备通信测试
-- [**thread_example**](file:///workspace/examples/thread_example/readme.md)：多线程环境下的使用示例
-- [**topology_test**](file:///workspace/examples/topology_test/readme.md)：复杂网络拓扑测试
-- [**serial_three_devices**](file:///workspace/examples/serial_three_devices/readme.md)：串行三设备通信示例
+- [**simple_test**](examples/simple_test/readme.md)：简单的两设备通信测试
+- [**thread_example**](examples/thread_example/readme.md)：多线程环境下的使用示例
+- [**topology_test**](examples/topology_test/readme.md)：复杂网络拓扑测试
+- [**serial_three_devices**](examples/serial_three_devices/readme.md)：串行三设备通信示例
 
 详细使用说明请参考各示例目录下的readme.md文件。
 
@@ -144,15 +144,15 @@ void timer_interrupt_handler(void) {
 3. **实现系统接口**：实现内存分配、信号处理、锁机制等接口
 4. **集成到项目**：将eProto的头文件和源文件添加到您的项目中
 
-详细的移植指南请参考 [docs/PORTING_GUIDE.md](file:///workspace/docs/PORTING_GUIDE.md)。
+详细的移植指南请参考 [docs/PORTING_GUIDE.md](docs/PORTING_GUIDE.md)。
 
 ## 详细文档
 
-- [协议文档](file:///workspace/docs/PROTOCOL.md)：详细介绍协议帧格式和通信流程
-- [实现文档](file:///workspace/docs/IMPLEMENTATION.md)：介绍协议的实现思路和架构
-- [API参考](file:///workspace/docs/API_REFERENCE.md)：详细的API使用说明
-- [移植指南](file:///workspace/docs/PORTING_GUIDE.md)：详细的移植步骤和注意事项
+- [协议文档](docs/PROTOCOL.md)：详细介绍协议帧格式和通信流程
+- [实现文档](docs/IMPLEMENTATION.md)：介绍协议的实现思路和架构
+- [API参考](docs/API_REFERENCE.md)：详细的API使用说明
+- [移植指南](docs/PORTING_GUIDE.md)：详细的移植步骤和注意事项
 
 ## 许可证
 
-本项目采用 MIT 许可证，详情请参考 [LICENSE](file:///workspace/LICENSE) 文件。
+本项目采用 MIT 许可证，详情请参考 [LICENSE](LICENSE) 文件。
