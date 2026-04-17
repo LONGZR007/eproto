@@ -40,6 +40,10 @@ typedef enum {
     EPROTO_STATUS_HANDSHAKE_SUCCESS     // 握手成功
 } eproto_status_t;
 
+// 回调函数类型定义
+typedef void (*eproto_status_callback_t)(eproto_status_t status, uint8_t* data, uint16_t length);
+typedef void (*eproto_handshake_callback_t)(void);
+
 // 帧结构 typedef - 定义在 frame_parser.h 中
 
 // 设备队列结构体
@@ -58,7 +62,7 @@ typedef struct {
     // 帧解析器
     eproto_frame_parser_t parser;
     // 接口函数
-    void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length);
+    eproto_status_callback_t status_callback;
     // 状态变量
     uint16_t next_packet_id;
     uint16_t last_id;  // 上次处理的包ID，用于重发包检测
@@ -66,7 +70,7 @@ typedef struct {
     eproto_node_t* current_send_node;  // 当前正在发送的节点
 #ifdef EPROTO_ENABLE_HANDSHAKE
     // 握手相关
-    void (*handshake_callback)(void);
+    eproto_handshake_callback_t handshake_callback;
     uint8_t handshake_required;        // 握手标志
 #endif
     // 设备队列
@@ -146,8 +150,8 @@ void eproto_destroy(eproto_t* eproto);
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
  */
 eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus_t* bus, uint8_t* rx_buffer,
-                           uint16_t rx_buffer_size, const char* name, void (*handshake_callback)(void),
-                           void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length));
+                           uint16_t rx_buffer_size, const char* name, eproto_handshake_callback_t handshake_callback,
+                           eproto_status_callback_t status_callback);
 
 /**
  * 向指定总线添加目标设备地址

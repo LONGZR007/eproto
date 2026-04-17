@@ -65,7 +65,7 @@ typedef struct {
     // 帧解析器
     eproto_frame_parser_t parser;
     // 接口函数
-    void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length);
+    eproto_status_callback_t status_callback;
     void (*receive_callback)(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
     // 状态变量
     uint16_t next_packet_id;
@@ -74,7 +74,7 @@ typedef struct {
     eproto_node_t* current_send_node;  // 当前正在发送的节点
 #ifdef EPROTO_ENABLE_HANDSHAKE
     // 握手相关
-    void (*handshake_callback)(void);
+    eproto_handshake_callback_t handshake_callback;
     uint8_t handshake_required;        // 握手标志
 #endif
     // 设备队列
@@ -169,8 +169,8 @@ void eproto_destroy(eproto_t* eproto);
 
 ```c
 eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus_t* bus, uint8_t* rx_buffer,
-                              uint16_t rx_buffer_size, const char* name, void (*handshake_callback)(void),
-                              void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length));
+                              uint16_t rx_buffer_size, const char* name, eproto_handshake_callback_t handshake_callback,
+                              eproto_status_callback_t status_callback);
 ```
 
 - **功能**：向eProto实例添加总线

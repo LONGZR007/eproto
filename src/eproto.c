@@ -153,8 +153,8 @@ static eproto_bus_manager_t* eproto_find_bus_by_destination(eproto_t* eproto, ui
 
 // 添加总线
 eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus_t* bus, uint8_t* rx_buffer,
-                              uint16_t rx_buffer_size, const char* name, void (*handshake_callback)(void),
-                              void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length)) {
+                              uint16_t rx_buffer_size, const char* name, eproto_handshake_callback_t handshake_callback,
+                              eproto_status_callback_t status_callback) {
     if (!eproto || !bus || !rx_buffer || rx_buffer_size == 0)
         return EPROTO_ERROR_INVALID_FRAME;
 
