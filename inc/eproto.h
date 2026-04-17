@@ -9,11 +9,6 @@
 #include "eproto_packet_node.h"
 #include "eproto_frame_parser.h"
 
-// 握手功能配置检查
-#ifndef EPROTO_ENABLE_HANDSHAKE
-#define EPROTO_ENABLE_HANDSHAKE 1  // 默认启用握手功能
-#endif
-
 // eProto - 嵌入式协议（Embedded Protocol）
 // "e"代表嵌入式（Embedded），"Proto"代表协议（Protocol）
 

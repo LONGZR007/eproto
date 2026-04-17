@@ -6,6 +6,11 @@
 
 #include "eproto_config.h"
 
+// 握手功能配置检查
+#ifndef EPROTO_ENABLE_HANDSHAKE
+#define EPROTO_ENABLE_HANDSHAKE 1  // 默认启用握手功能
+#endif
+
 // 帧头长度（除数据部分外）：头(1) + 版本(1) + 长度(2) + 包类型(1) + 源地址(1) +
 // 设备地址(1) + 包ID(2) + CRC(2)
 #define EPROTO_FRAME_HEADER_LENGTH 11
