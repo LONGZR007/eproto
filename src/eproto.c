@@ -241,6 +241,9 @@ eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t bus_addre
     bus_mgr->destination_devices[bus_mgr->destination_device_count] = destination_address;
     bus_mgr->destination_device_count++;
 
+    // 注意：第一个添加的设备将被用于握手
+    // 后续添加的设备仅用于数据通信
+
     return EPROTO_OK;
 }
 
