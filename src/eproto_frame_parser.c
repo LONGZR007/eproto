@@ -76,8 +76,7 @@ eproto_frame_parser_error_t eproto_frame_parser_parse(eproto_ring_buffer_t* rb, 
     while (eproto_ring_buffer_available(rb) >= 10) {
         if (is_eproto_frame_header(rb, parser->config.frame_header)) {
             found_header = 1;
-            uint8_t version, length_high, length_low, packet_type, src_addr, dst_addr, packet_id_high,
-                packet_id_low;
+            uint8_t version, length_high, length_low, packet_type, src_addr, dst_addr, packet_id_high, packet_id_low;
             if (peek_from_eproto_ring_buffer(rb, &version, 1, 1) != 1) {
                 eproto_ring_buffer_discard(rb, 1);
                 continue;
@@ -216,9 +215,9 @@ void eproto_frame_parser_free_result(eproto_frame_parser_t* parser, eproto_frame
     result->packet_id = 0;
 }
 
-uint16_t eproto_frame_parser_pack_frame(uint8_t* buffer, uint16_t buffer_size, uint8_t frame_header,
-                                        uint8_t src_addr, uint8_t dst_addr, uint16_t packet_id,
-                                        uint8_t packet_type, uint8_t* data, uint16_t data_length) {
+uint16_t eproto_frame_parser_pack_frame(uint8_t* buffer, uint16_t buffer_size, uint8_t frame_header, uint8_t src_addr,
+                                        uint8_t dst_addr, uint16_t packet_id, uint8_t packet_type, uint8_t* data,
+                                        uint16_t data_length) {
     if (!buffer)
         return 0;
 

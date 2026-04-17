@@ -54,7 +54,7 @@ typedef struct {
 typedef struct {
     eproto_bus_t* bus;               // 总线接口
     eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
-    uint8_t self_addr;            // 对应的设备地址
+    uint8_t self_addr;               // 对应的设备地址
     const char* name;                // 总线名称，用于日志和调试
 
     // 帧解析器
@@ -69,7 +69,7 @@ typedef struct {
 #ifdef EPROTO_ENABLE_HANDSHAKE
     // 握手相关
     eproto_handshake_callback_t handshake_callback;
-    uint8_t handshake_required;        // 握手标志
+    uint8_t handshake_required;  // 握手标志
 #endif
     // 设备队列
     eproto_device_queues_t device_queues;
@@ -148,8 +148,8 @@ void eproto_destroy(eproto_t* eproto);
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
  */
 eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_t* bus, uint8_t* rx_buffer,
-                           uint16_t rx_buffer_size, const char* name, eproto_handshake_callback_t handshake_callback,
-                           eproto_status_callback_t status_callback);
+                              uint16_t rx_buffer_size, const char* name, eproto_handshake_callback_t handshake_callback,
+                              eproto_status_callback_t status_callback);
 
 /**
  * 向指定总线添加目标设备地址
