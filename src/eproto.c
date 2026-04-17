@@ -209,14 +209,14 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_t*
 }
 
 // 添加目标设备地址
-eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t bus_addr, uint8_t destination_addr) {
+eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t self_addr, uint8_t destination_addr) {
     if (!eproto)
         return EPROTO_ERROR_INVALID_FRAME;
 
     // 查找对应的总线管理器
     eproto_bus_manager_t* bus_mgr = NULL;
     for (uint8_t i = 0; i < EPROTO_MAX_BUS_COUNT; i++) {
-        if (eproto->bus_managers[i].bus && eproto->bus_managers[i].self_addr == bus_addr) {
+        if (eproto->bus_managers[i].bus && eproto->bus_managers[i].self_addr == self_addr) {
             bus_mgr = &eproto->bus_managers[i];
             break;
         }

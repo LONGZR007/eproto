@@ -188,13 +188,13 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_t*
 #### eproto_add_destination_device
 
 ```c
-eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t bus_addr, uint8_t destination_addr);
+eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t self_addr, uint8_t destination_addr);
 ```
 
 - **功能**：向指定总线添加目标设备地址
 - **参数**：
   - `eproto`：指向eProto实例的指针
-  - `bus_addr`：总线地址
+  - `self_addr`：总线的自身地址
   - `destination_addr`：目标设备地址
 - **返回值**：操作结果，`EPROTO_OK`表示成功，其他值表示错误
 - **注意**：当启用握手功能时，第一个添加的设备将被用于握手操作，后续添加的设备仅用于数据通信
