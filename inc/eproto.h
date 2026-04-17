@@ -44,8 +44,6 @@ typedef enum {
 typedef void (*eproto_status_callback_t)(eproto_status_t status, uint8_t* data, uint16_t length);
 typedef void (*eproto_handshake_callback_t)(void);
 
-// 帧结构 typedef - 定义在 frame_parser.h 中
-
 // 设备队列结构体
 typedef struct {
     struct eproto_list_head send_queue;  // 发送队列
