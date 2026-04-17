@@ -15,19 +15,21 @@ SRCS = simple_test.c
 # Object files
 OBJS = $(SRCS:.c=.o)
 
-# Executable name
+# Executable name and output directory
 TARGET = simple_test
+BINDIR = ../../bin
 
 # Build rules
-all: $(TARGET)
+all: $(BINDIR)/$(TARGET)
 
-$(TARGET): $(OBJS)
+$(BINDIR)/$(TARGET): $(OBJS)
+	@mkdir -p $(BINDIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) ../../src/eproto.c ../../src/eproto_crc16.c ../../src/eproto_packet_node.c ../../src/eproto_ring_buffer.c ../../src/eproto_frame_parser.c fixed_block_allocator.c
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(BINDIR)/$(TARGET)
 
 .PHONY: all clean

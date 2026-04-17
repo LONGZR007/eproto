@@ -18,19 +18,21 @@ OBJS = $(SRCS:.c=.o)
 # Dependencies
 DEPS = common.h
 
-# Executable name
+# Executable name and output directory
 TARGET = thread_example
+BINDIR = ../../bin
 
 # Build rules
-all: $(TARGET)
+all: $(BINDIR)/$(TARGET)
 
-$(TARGET): $(OBJS)
+$(BINDIR)/$(TARGET): $(OBJS)
+	@mkdir -p $(BINDIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) ../../src/eproto.c ../../src/eproto_crc16.c ../../src/eproto_packet_node.c ../../src/eproto_ring_buffer.c ../../src/eproto_frame_parser.c
 
 %.o: %.c $(DEPS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(BINDIR)/$(TARGET)
 
 .PHONY: all clean
