@@ -75,7 +75,6 @@ eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_funct
 
         // 初始化接口函数
         eproto->bus_managers[i].status_callback = NULL;
-        eproto->bus_managers[i].receive_callback = NULL;
         eproto->bus_managers[i].self_address = 0;
         // 初始化状态变量
         eproto->bus_managers[i].next_packet_id = 1;
@@ -157,9 +156,7 @@ static eproto_bus_manager_t* eproto_find_bus_by_destination(eproto_t* eproto, ui
 // 添加总线
 eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus_t* bus, uint8_t* rx_buffer,
                               uint16_t rx_buffer_size, const char* name, void (*handshake_callback)(void),
-                              void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length),
-                              void (*receive_callback)(uint8_t source_address, uint16_t packet_id, uint8_t* data,
-                                                       uint16_t length)) {
+                              void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length)) {
     if (!eproto || !bus || !rx_buffer || rx_buffer_size == 0)
         return EPROTO_ERROR_INVALID_FRAME;
 
@@ -182,7 +179,6 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus
 
     // 设置接口函数
     eproto->bus_managers[manager_index].status_callback = status_callback;
-    eproto->bus_managers[manager_index].receive_callback = receive_callback;
 #ifdef EPROTO_ENABLE_HANDSHAKE
     eproto->bus_managers[manager_index].handshake_callback = handshake_callback;
 #else
@@ -617,13 +613,8 @@ static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager
         }
     }
 
-    // 调用接收回调函数
-    if (bus_mgr->receive_callback) {
-        EPROTO_DEBUG_LOG("%s: Calling receive callback\n", EPROTO_BUS_NAME(bus_mgr));
-        bus_mgr->receive_callback(frame->source_address, frame->packet_id, frame->data, frame->length);
-        // 更新上次处理的包ID
-        bus_mgr->last_id = frame->packet_id;
-    }
+    // 更新上次处理的包ID
+    bus_mgr->last_id = frame->packet_id;
 }
 
 // 处理协议层应答包
@@ -1087,12 +1078,7 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
             }
         }
         
-        // 调用当前总线的接收回调函数，通知用户收到了广播包
-        if (current_bus_mgr->receive_callback) {
-            EPROTO_DEBUG_LOG("%s: Calling receive callback for broadcast\n", EPROTO_BUS_NAME(current_bus_mgr));
-            current_bus_mgr->receive_callback(frame->source_address, frame->packet_id, frame->data, frame->length);
-            // 广播包不更新last_id，避免影响重发检测
-        }
+        // 广播包处理完成
         
         return;
     }

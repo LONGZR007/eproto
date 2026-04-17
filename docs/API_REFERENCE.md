@@ -172,9 +172,7 @@ void eproto_destroy(eproto_t* eproto);
 ```c
 eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus_t* bus, uint8_t* rx_buffer,
                               uint16_t rx_buffer_size, const char* name, void (*handshake_callback)(void),
-                              void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length),
-                              void (*receive_callback)(uint8_t source_address, uint16_t packet_id, uint8_t* data,
-                                                       uint16_t length));
+                              void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length));
 ```
 
 - **功能**：向eProto实例添加总线
@@ -187,7 +185,6 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus
   - `name`：总线名称，用于日志和调试
   - `handshake_callback`：握手回调函数（仅当启用握手功能时有效）
   - `status_callback`：状态回调函数
-  - `receive_callback`：接收回调函数
 - **返回值**：操作结果，`EPROTO_OK`表示成功，其他值表示错误
 
 #### eproto_add_destination_device
@@ -389,17 +386,7 @@ typedef void (*eproto_status_callback_t)(eproto_status_t status, uint8_t* data, 
   - `data`：状态相关数据
   - `length`：数据长度
 
-### 3.3 接收回调函数
 
-```c
-typedef void (*eproto_receive_callback_t)(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
-```
-
-- **参数**：
-  - `source_address`：源设备地址
-  - `packet_id`：包ID
-  - `data`：接收到的数据
-  - `length`：数据长度
 
 ### 3.4 握手回调函数
 
