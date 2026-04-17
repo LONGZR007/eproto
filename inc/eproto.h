@@ -40,9 +40,6 @@ typedef enum {
     EPROTO_STATUS_HANDSHAKE_SUCCESS     // 握手成功
 } eproto_status_t;
 
-// 包类型名称数组
-extern const char* eproto_packet_type_names[];
-
 // 帧结构 typedef - 定义在 frame_parser.h 中
 
 // 设备队列结构体
@@ -82,8 +79,6 @@ typedef struct {
     // 目标设备地址数量
     uint8_t destination_device_count;
 } eproto_bus_manager_t;
-
-// 包节点结构体（用于发送队列和等待队列） - 定义在 packet_node.h 中
 
 // 用户接口结构体
 typedef struct {

@@ -36,7 +36,7 @@ static eproto_error_t eproto_send_response(eproto_t* eproto, uint8_t bus_address
 static uint32_t eproto_find_min_timeout_timestamp(eproto_t* eproto);
 
 // 包类型名称数组
-const char* eproto_packet_type_names[] = {
+static const char* eproto_packet_type_names[] = {
     "USER_SEND",    // EPROTO_PACKET_TYPE_USER_SEND
     "USER_REPLY",   // EPROTO_PACKET_TYPE_USER_REPLY
     "PROTOCOL_ACK"  // EPROTO_PACKET_TYPE_PROTOCOL_ACK
