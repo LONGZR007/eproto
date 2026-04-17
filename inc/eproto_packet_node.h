@@ -15,7 +15,7 @@ typedef void (*eproto_packet_callback_t)(eproto_send_status_t status, uint16_t p
 typedef struct eproto_node {
     struct eproto_list_head list;
     uint8_t source_addr;
-    uint8_t destination_addr;
+    uint8_t dst_addr;
     uint16_t packet_id;
     uint8_t* data;
     uint16_t data_length;
@@ -30,7 +30,7 @@ typedef struct eproto_node {
 } eproto_node_t;
 
 eproto_node_t* eproto_packet_node_create(eproto_malloc_func_t malloc_func, eproto_free_func_t free_func,
-                                         uint8_t source_addr, uint8_t destination_addr, uint16_t packet_id,
+                                         uint8_t source_addr, uint8_t dst_addr, uint16_t packet_id,
                                          uint8_t* data, uint16_t data_length, eproto_packet_callback_t callback,
                                          void* private_data, uint8_t no_wait, uint8_t packet_type,
                                          uint8_t max_retry_count, uint32_t timeout_ms);

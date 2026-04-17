@@ -155,16 +155,16 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_t*
  * 向指定总线添加目标设备地址
  * @param eproto             指向eProto实例的指针
  * @param bus_addr        总线地址
- * @param destination_addr 目标设备地址
+ * @param dst_addr 目标设备地址
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
  * @note                    当启用握手功能时，第一个添加的设备将被用于握手操作，后续添加的设备仅用于数据通信
  */
-eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t self_addr, uint8_t destination_addr);
+eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t self_addr, uint8_t dst_addr);
 
 /**
  * 主动发送数据
  * @param eproto                指向eProto实例的指针
- * @param destination_addr   目标设备地址
+ * @param dst_addr   目标设备地址
  * @param data                  要发送的数据
  * @param length                数据长度
  * @param callback              发送完成后的回调函数
@@ -174,13 +174,13 @@ eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t self_addr
  * @note                data
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
-eproto_error_t eproto_send(eproto_t* eproto, uint8_t destination_addr, uint8_t* data, uint16_t length,
+eproto_error_t eproto_send(eproto_t* eproto, uint8_t dst_addr, uint8_t* data, uint16_t length,
                            eproto_packet_callback_t callback, void* private_data, uint8_t no_wait);
 
 /**
  * 发送用户回复包
  * @param eproto                指向eProto实例的指针
- * @param destination_addr   目标设备地址
+ * @param dst_addr   目标设备地址
  * @param packet_id             包ID
  * @param data                  要发送的数据
  * @param length                数据长度
@@ -188,13 +188,13 @@ eproto_error_t eproto_send(eproto_t* eproto, uint8_t destination_addr, uint8_t* 
  * @note                data
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
-eproto_error_t eproto_send_user_reply(eproto_t* eproto, uint8_t destination_addr, uint16_t packet_id, uint8_t* data,
+eproto_error_t eproto_send_user_reply(eproto_t* eproto, uint8_t dst_addr, uint16_t packet_id, uint8_t* data,
                                       uint16_t length);
 
 /**
  * 主动发送数据（扩展接口，支持自定义超时时间和最大重发次数）
  * @param eproto                指向eProto实例的指针
- * @param destination_addr   目标设备地址
+ * @param dst_addr   目标设备地址
  * @param data                  要发送的数据
  * @param length                数据长度
  * @param callback              发送完成后的回调函数
@@ -206,14 +206,14 @@ eproto_error_t eproto_send_user_reply(eproto_t* eproto, uint8_t destination_addr
  * @note                    data
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
-eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t destination_addr, uint8_t* data, uint16_t length,
+eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t dst_addr, uint8_t* data, uint16_t length,
                               eproto_packet_callback_t callback, void* private_data, uint8_t no_wait,
                               uint8_t max_retry_count, uint32_t timeout_ms);
 
 /**
  * 发送用户回复包（扩展接口，支持自定义超时时间和最大重发次数）
  * @param eproto                指向eProto实例的指针
- * @param destination_addr   目标设备地址
+ * @param dst_addr   目标设备地址
  * @param packet_id             包ID
  * @param data                  要发送的数据
  * @param length                数据长度
@@ -223,7 +223,7 @@ eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t destination_addr, uint8_
  * @note                    data
  * 会被内部复制到分配的内存中，用户可以在调用后释放原始数据
  */
-eproto_error_t eproto_send_user_reply_ex(eproto_t* eproto, uint8_t destination_addr, uint16_t packet_id, uint8_t* data,
+eproto_error_t eproto_send_user_reply_ex(eproto_t* eproto, uint8_t dst_addr, uint16_t packet_id, uint8_t* data,
                                          uint16_t length, uint8_t max_retry_count, uint32_t timeout_ms);
 
 #ifdef EPROTO_ENABLE_HANDSHAKE
