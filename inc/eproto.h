@@ -9,6 +9,11 @@
 #include "eproto_packet_node.h"
 #include "eproto_frame_parser.h"
 
+// 握手功能配置检查
+#ifndef EPROTO_ENABLE_HANDSHAKE
+#define EPROTO_ENABLE_HANDSHAKE 1  // 默认启用握手功能
+#endif
+
 // eProto - 嵌入式协议（Embedded Protocol）
 // "e"代表嵌入式（Embedded），"Proto"代表协议（Protocol）
 
@@ -63,15 +68,18 @@ typedef struct {
     // 帧解析器
     eproto_frame_parser_t parser;
     // 接口函数
-    void (*handshake_callback)(void);
     void (*status_callback)(eproto_status_t status, uint8_t* data, uint16_t length);
     void (*receive_callback)(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
     // 状态变量
     uint16_t next_packet_id;
     uint16_t last_id;  // 上次处理的包ID，用于重发包检测
     uint8_t crc_error_count;
-    uint8_t handshake_required;        // 握手标志
     eproto_node_t* current_send_node;  // 当前正在发送的节点
+#ifdef EPROTO_ENABLE_HANDSHAKE
+    // 握手相关
+    void (*handshake_callback)(void);
+    uint8_t handshake_required;        // 握手标志
+#endif
     // 设备队列
     eproto_device_queues_t device_queues;
     // 目标设备地址数组
@@ -146,7 +154,7 @@ void eproto_destroy(eproto_t* eproto);
  * @param rx_buffer         接收缓冲区
  * @param rx_buffer_size    接收缓冲区大小
  * @param name              总线名称，用于日志和调试
- * @param wakeup            唤醒回调函数
+ * @param handshake_callback 握手回调函数（仅当启用握手功能时有效）
  * @param status_callback   状态回调函数
  * @param receive_callback  接收回调函数
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
@@ -163,7 +171,7 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_address, eproto_bus
  * @param bus_address        总线地址
  * @param destination_address 目标设备地址
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
- * @note                    第一个添加的设备将被用于握手操作，后续添加的设备仅用于数据通信
+ * @note                    当启用握手功能时，第一个添加的设备将被用于握手操作，后续添加的设备仅用于数据通信
  */
 eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t bus_address, uint8_t destination_address);
 
@@ -232,6 +240,7 @@ eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t destination_address, uin
 eproto_error_t eproto_send_user_reply_ex(eproto_t* eproto, uint8_t destination_address, uint16_t packet_id, uint8_t* data,
                                          uint16_t length, uint8_t max_retry_count, uint32_t timeout_ms);
 
+#ifdef EPROTO_ENABLE_HANDSHAKE
 /**
  * 设置总线握手标志
  * @param eproto        指向eProto实例的指针
@@ -248,6 +257,7 @@ eproto_error_t eproto_set_handshake(eproto_t* eproto, uint8_t bus_address, uint8
  * @return              操作结果，EPROTO_OK表示成功，其他值表示错误
  */
 eproto_error_t eproto_handshake(eproto_t* eproto, uint8_t bus_address);
+#endif
 
 /**
  * 接收数据处理（由中断或轮询调用）
