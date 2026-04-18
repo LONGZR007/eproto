@@ -114,18 +114,7 @@ void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length
         case EPROTO_STATUS_CRC_ERROR:
             printf("Status: CRC error\n");
             break;
-        case EPROTO_STATUS_SLEEP_SUCCESS:
-            printf("Status: Sleep success\n");
-            break;
-        case EPROTO_STATUS_SLEEP_FAILED:
-            printf("Status: Sleep failed\n");
-            break;
-        case EPROTO_STATUS_WAKEUP_SUCCESS:
-            printf("Status: Wakeup success\n");
-            break;
-        case EPROTO_STATUS_WAKEUP_FAILED:
-            printf("Status: Wakeup failed\n");
-            break;
+
         case EPROTO_STATUS_MULTIPLE_CRC_ERRORS:
             printf("Status: Multiple CRC errors\n");
             break;

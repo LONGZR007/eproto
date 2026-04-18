@@ -29,10 +29,7 @@ typedef enum {
 ```c
 typedef enum {
     EPROTO_STATUS_CRC_ERROR = 0,        // CRC校验错误
-    EPROTO_STATUS_SLEEP_SUCCESS,        // 休眠成功
-    EPROTO_STATUS_SLEEP_FAILED,         // 休眠失败
-    EPROTO_STATUS_WAKEUP_SUCCESS,       // 唤醒成功
-    EPROTO_STATUS_WAKEUP_FAILED,        // 唤醒失败
+
     EPROTO_STATUS_MULTIPLE_CRC_ERRORS,  // 多次连续CRC错误
     EPROTO_STATUS_HANDSHAKE_IN_PROGRESS,// 正在握手
     EPROTO_STATUS_HANDSHAKE_SUCCESS     // 握手成功
