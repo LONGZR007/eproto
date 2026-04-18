@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
     // 初始化总线
     uint8_t rx_buffers[5][256];
     for (int i = 0; i < bus_count; i++) {
-        eproto_bus_t bus = {.send = bus_send_functions[i], .receive = NULL};
+        eproto_bus_t bus = {.send = bus_send_functions[i]};
         uint8_t bus_address = bus_configs[i].bus_address;
         int target_count = bus_configs[i].target_count;
         uint8_t* target_addresses = bus_configs[i].target_addresses;

@@ -411,7 +411,7 @@ void* device1_thread(void* arg) {
     fflush(stdout);
     g_device1_eproto = &data->eproto_inst;
 
-    eproto_bus_t device1_bus = {.send = device1_bus_send, .receive = device1_bus_receive};
+    eproto_bus_t device1_bus = {.send = device1_bus_send};
 
     error = eproto_add_bus(&data->eproto_inst, 0x01, &device1_bus, data->rx_buffer, sizeof(data->rx_buffer),
                            "device1_bus", mock_wakeup, mock_status_callback, device1_receive_callback);
@@ -521,7 +521,7 @@ void* device2_thread(void* arg) {
     fflush(stdout);
     g_device2_eproto = &data->eproto_inst;
 
-    eproto_bus_t device2_bus = {.send = device2_bus_send, .receive = device2_bus_receive};
+    eproto_bus_t device2_bus = {.send = device2_bus_send};
 
     error = eproto_add_bus(&data->eproto_inst, 0x02, &device2_bus, data->rx_buffer, sizeof(data->rx_buffer),
                            "device2_bus", mock_wakeup, mock_status_callback, device2_receive_callback);

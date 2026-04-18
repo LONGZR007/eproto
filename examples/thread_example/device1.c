@@ -244,7 +244,7 @@ void* device1_thread(void* arg) {
     g_device1_eproto = &data->eproto_inst;
 
     // 定义总线接口
-    eproto_bus_t device1_bus = {.send = device1_bus_send, .receive = device1_bus_receive};
+    eproto_bus_t device1_bus = {.send = device1_bus_send};
 
     // 添加路由（使用设备1自己的总线地址0x01）
     error = eproto_add_bus(&data->eproto_inst, 0x01, &device1_bus, data->rx_buffer, sizeof(data->rx_buffer),

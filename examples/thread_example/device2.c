@@ -186,7 +186,7 @@ void* device2_thread(void* arg) {
     g_device2_eproto = &data->eproto_inst;
 
     // 定义第一条总线接口（总线2，连接到设备1）
-    eproto_bus_t device2_bus = {.send = device2_bus_send, .receive = device2_bus_receive};
+    eproto_bus_t device2_bus = {.send = device2_bus_send};
 
     // 添加路由（使用设备2自己的总线2地址0x02）
     error = eproto_add_bus(&data->eproto_inst, 0x02, &device2_bus, data->rx_buffer, sizeof(data->rx_buffer),
@@ -206,7 +206,7 @@ void* device2_thread(void* arg) {
     printf("%s: Target device 0x01 added successfully\n", data->device_name);
 
     // 定义第二条总线接口（总线3，连接到设备3）
-    eproto_bus_t device2_bus2 = {.send = device2_bus2_send, .receive = device2_bus2_receive};
+    eproto_bus_t device2_bus2 = {.send = device2_bus2_send};
 
     // 添加第二条总线（使用设备2自己的总线3地址0x03）
     error = eproto_add_bus(&data->eproto_inst, 0x03, &device2_bus2, data->rx_buffer2, sizeof(data->rx_buffer2),
