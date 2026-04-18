@@ -43,7 +43,6 @@
 // 总线接口
 typedef struct {
     void (*send)(uint8_t* data, uint16_t length);
-    uint16_t (*receive)(uint8_t* buffer, uint16_t size);
 } eproto_bus_t;
 
 // 信号回调接口

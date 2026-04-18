@@ -283,7 +283,7 @@ int main(void) {
     printf("eProto initialized successfully\n");
 
     // 总线6（连接到A1、B4、E11）
-    eproto_bus_t c_bus6 = {.send = c_bus6_send, .receive = NULL};
+    eproto_bus_t c_bus6 = {.send = c_bus6_send};
 
     uint8_t c_rx_buffer6[256];
     error = eproto_add_bus(&g_eproto, 0x06, &c_bus6, c_rx_buffer6, sizeof(c_rx_buffer6), "c_bus6", mock_wakeup,
@@ -295,7 +295,7 @@ int main(void) {
     printf("Bus 6 added successfully\n");
 
     // 总线7（连接到D9）
-    eproto_bus_t c_bus7 = {.send = c_bus7_send, .receive = NULL};
+    eproto_bus_t c_bus7 = {.send = c_bus7_send};
 
     uint8_t c_rx_buffer7[256];
     error = eproto_add_bus(&g_eproto, 0x07, &c_bus7, c_rx_buffer7, sizeof(c_rx_buffer7), "c_bus7", mock_wakeup,
