@@ -125,11 +125,11 @@ void* device1_process_thread(void* arg) {
     // 等待设备2初始化
     usleep(100000);
 
-    // 发送需要回复的测试数据（no_wait=0）到设备2的总线2
+    // 发送需要回复的测试数据（need_reply=1）到设备2的总线2
     uint8_t test_data[] = {0x11, 0x22, 0x33, 0x44, 0x55};
     printf("%s: Sending test data (needs reply) to device 2 (bus 2)...\n", data->device_name);
     eproto_error_t error =
-        eproto_send(&data->eproto_inst, 0x02, test_data, sizeof(test_data), device1_send_callback, data, 0);
+        eproto_send(&data->eproto_inst, 0x02, test_data, sizeof(test_data), device1_send_callback, data, 1);
     if (error != EPROTO_OK) {
         printf("%s: Failed to send data\n", data->device_name);
         pthread_exit(NULL);
@@ -139,11 +139,11 @@ void* device1_process_thread(void* arg) {
     // 等待一段时间，确保前面的数据包处理完成
     usleep(100000);
 
-    // 发送不需要回复的测试数据（no_wait=1）到设备2的总线2
+    // 发送不需要回复的测试数据（need_reply=0）到设备2的总线2
     uint8_t test_data_no_wait[] = {0x66, 0x77, 0x88, 0x99, 0xAA};
     printf("%s: Sending test data (no reply needed) to device 2 (bus 2)...\n", data->device_name);
     error = eproto_send(&data->eproto_inst, 0x02, test_data_no_wait, sizeof(test_data_no_wait), device1_send_callback,
-                        data, 1);
+                        data, 0);
     if (error != EPROTO_OK) {
         printf("%s: Failed to send data\n", data->device_name);
         pthread_exit(NULL);
@@ -154,7 +154,7 @@ void* device1_process_thread(void* arg) {
     uint8_t test_data_to_3[] = {0x33, 0x44, 0x55, 0x66, 0x77};
     printf("%s: Sending test data to device 3 (bus 4 via device 2 forwarding)...\n", data->device_name);
     error =
-        eproto_send(&data->eproto_inst, 0x04, test_data_to_3, sizeof(test_data_to_3), device1_send_callback, data, 0);
+        eproto_send(&data->eproto_inst, 0x04, test_data_to_3, sizeof(test_data_to_3), device1_send_callback, data, 1);
     if (error != EPROTO_OK) {
         printf("%s: Failed to send data to device 3\n", data->device_name);
         pthread_exit(NULL);
@@ -167,7 +167,7 @@ void* device1_process_thread(void* arg) {
     // 发送广播数据
     uint8_t broadcast_data[] = {0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
     printf("%s: Sending broadcast data to all devices...\n", data->device_name);
-    error = eproto_send_ex(&data->eproto_inst, 0xFF, broadcast_data, sizeof(broadcast_data), device1_send_callback, data, 1, 0, 0);
+    error = eproto_send_ex(&data->eproto_inst, 0xFF, broadcast_data, sizeof(broadcast_data), device1_send_callback, data, 0, 0, 0);
     if (error != EPROTO_OK) {
         printf("%s: Failed to send broadcast data\n", data->device_name);
         pthread_exit(NULL);

@@ -205,7 +205,7 @@ eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t self_addr
 
 ```c
 eproto_error_t eproto_send(eproto_t* eproto, uint8_t dst_addr, uint8_t* data, uint16_t length,
-                           eproto_packet_callback_t callback, void* private_data, uint8_t no_wait);
+                           eproto_packet_callback_t callback, void* private_data, uint8_t need_reply);
 ```
 
 - **功能**：主动发送数据
@@ -216,7 +216,7 @@ eproto_error_t eproto_send(eproto_t* eproto, uint8_t dst_addr, uint8_t* data, ui
   - `length`：数据长度
   - `callback`：发送完成后的回调函数
   - `private_data`：回调函数的私有数据
-  - `no_wait`：是否不需要等待回复
+  - `need_reply`：是否需要等待回复（1表示需要，0表示不需要）
 - **返回值**：操作结果，`EPROTO_OK`表示成功，其他值表示错误
 - **注意**：`data`会被内部复制到分配的内存中，用户可以在调用后释放原始数据
 
@@ -241,7 +241,7 @@ eproto_error_t eproto_send_user_reply(eproto_t* eproto, uint8_t dst_addr, uint16
 
 ```c
 eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t dst_addr, uint8_t* data, uint16_t length,
-                              eproto_packet_callback_t callback, void* private_data, uint8_t no_wait,
+                              eproto_packet_callback_t callback, void* private_data, uint8_t need_reply,
                               uint8_t max_retry_count, uint32_t timeout_ms);
 ```
 
@@ -253,7 +253,7 @@ eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t dst_addr, uint8_t* data,
   - `length`：数据长度
   - `callback`：发送完成后的回调函数
   - `private_data`：回调函数的私有数据
-  - `no_wait`：是否不需要等待回复
+  - `need_reply`：是否需要等待回复（1表示需要，0表示不需要）
   - `max_retry_count`：最大重发次数
   - `timeout_ms`：超时时间（毫秒）
 - **返回值**：操作结果，`EPROTO_OK`表示成功，其他值表示错误
@@ -458,7 +458,7 @@ if (error != EPROTO_OK) {
 
 // 6. 发送数据
 uint8_t data[] = {0x01, 0x02, 0x03, 0x04, 0x05};
-error = eproto_send(&eproto_inst, 0x02, data, sizeof(data), my_send_callback, NULL, 0);
+error = eproto_send(&eproto_inst, 0x02, data, sizeof(data), my_send_callback, NULL, 1);
 if (error != EPROTO_OK) {
     // 处理错误
     return error;

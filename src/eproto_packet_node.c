@@ -3,7 +3,7 @@
 eproto_node_t* eproto_packet_node_create(eproto_malloc_func_t malloc_func, eproto_free_func_t free_func,
                                          uint8_t src_addr, uint8_t dst_addr, uint16_t packet_id, uint8_t* data,
                                          uint16_t data_length, eproto_packet_callback_t callback, void* private_data,
-                                         uint8_t no_wait, uint8_t packet_type, uint8_t max_retry_count,
+                                         uint8_t need_reply, uint8_t packet_type, uint8_t max_retry_count,
                                          uint32_t timeout_ms) {
     eproto_node_t* node = (eproto_node_t*)malloc_func(sizeof(eproto_node_t));
     if (!node)
@@ -15,7 +15,7 @@ eproto_node_t* eproto_packet_node_create(eproto_malloc_func_t malloc_func, eprot
     node->packet_id = packet_id;
     node->callback = callback;
     node->private_data = private_data;
-    node->no_wait = no_wait;
+    node->need_reply = need_reply;
     node->packet_type = packet_type;
     node->timestamp = 0;
     node->retry_count = 0;
