@@ -23,7 +23,7 @@ DEPS = common.h
 
 # Executable name and output directory
 TARGET = thread_example
-BINDIR = ../../bin
+BINDIR = bin
 
 # Build rules
 all: $(BINDIR)/$(TARGET)

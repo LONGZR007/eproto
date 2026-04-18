@@ -11,7 +11,7 @@ INC_DIR = ../../inc
 BUILD_DIR = build
 
 # 输出目录
-BINDIR = ../../bin
+BINDIR = bin
 
 # eProto 核心源文件
 EPROTO_SRCS = eproto.c eproto_crc16.c eproto_packet_node.c eproto_ring_buffer.c eproto_frame_parser.c

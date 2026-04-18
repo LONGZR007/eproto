@@ -28,7 +28,7 @@ DEVICE_OBJS = $(addprefix $(BUILDDIR)/, device_a.o device_b.o device_c.o bus_con
 
 # Target devices and output directory
 DEVICES = device_a device_b device_c
-BINDIR = ../../bin
+BINDIR = bin
 TARGETS = $(addprefix $(BINDIR)/, $(DEVICES))
 
 # Default target

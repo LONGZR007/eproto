@@ -20,7 +20,7 @@ OBJS = $(addprefix $(BUILDDIR)/, $(SRCS:.c=.o))
 
 # Executable name and output directory
 TARGET = simple_test
-BINDIR = ../../bin
+BINDIR = bin
 
 # Build rules
 all: $(BINDIR)/$(TARGET)
