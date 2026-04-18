@@ -244,13 +244,12 @@ eproto_error_t error = eproto_init(&eproto_inst, &user_functions);
 ```c
 // 定义总线接口
 eproto_bus_t bus = {
-    .send = my_bus_send,
-    .receive = my_bus_receive
+    .send = my_bus_send
 };
 
 // 添加总线
 error = eproto_add_bus(&eproto_inst, self_address, &bus, rx_buffer, sizeof(rx_buffer),
-                       "my_bus", handshake_callback, status_callback, receive_callback);
+                       "my_bus", status_callback, receive_callback);
 ```
 
 ### 10.3 发送数据示例

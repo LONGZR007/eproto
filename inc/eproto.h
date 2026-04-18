@@ -60,13 +60,13 @@ typedef enum {
     EPROTO_STATUS_WAKEUP_SUCCESS,       // 唤醒成功
     EPROTO_STATUS_WAKEUP_FAILED,        // 唤醒失败
     EPROTO_STATUS_MULTIPLE_CRC_ERRORS,  // 多次连续CRC错误
+    EPROTO_STATUS_HANDSHAKE_IN_PROGRESS,// 正在握手
     EPROTO_STATUS_HANDSHAKE_SUCCESS     // 握手成功
 } eproto_status_t;
 
 // 回调函数类型定义
 typedef void (*eproto_status_callback_t)(eproto_status_t status, uint8_t* data, uint16_t length);
 typedef void (*receive_callback_t)(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
-typedef void (*eproto_handshake_callback_t)(void);
 
 // 设备队列结构体
 typedef struct {
@@ -93,7 +93,6 @@ typedef struct {
     eproto_node_t* current_send_node;  // 当前正在发送的节点
 #ifdef EPROTO_ENABLE_HANDSHAKE
     // 握手相关
-    eproto_handshake_callback_t handshake_callback;
     uint8_t handshake_required;  // 握手标志
 #endif
     // 设备队列
@@ -168,13 +167,12 @@ void eproto_destroy(eproto_t* eproto);
  * @param rx_buffer         接收缓冲区
  * @param rx_buffer_size    接收缓冲区大小
  * @param name              总线名称，用于日志和调试
- * @param handshake_callback 握手回调函数（仅当启用握手功能时有效）
  * @param status_callback   状态回调函数
 * @param receive_callback   接收回调函数
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
  */
 eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_t* bus, uint8_t* rx_buffer,
-                              uint16_t rx_buffer_size, const char* name, eproto_handshake_callback_t handshake_callback,
+                              uint16_t rx_buffer_size, const char* name,
                               eproto_status_callback_t status_callback, receive_callback_t receive_callback);
 
 /**

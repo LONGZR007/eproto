@@ -130,6 +130,9 @@ void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length
         case EPROTO_STATUS_MULTIPLE_CRC_ERRORS:
             printf("Status: Multiple CRC errors\n");
             break;
+        case EPROTO_STATUS_HANDSHAKE_IN_PROGRESS:
+            printf("Status: Handshake in progress\n");
+            break;
         case EPROTO_STATUS_HANDSHAKE_SUCCESS:
             printf("Status: Handshake success\n");
             break;
@@ -313,7 +316,7 @@ int main(int argc, char *argv[]) {
         
         error = eproto_add_bus(&g_eproto, bus_address, &bus, 
                               rx_buffers[i], sizeof(rx_buffers[i]), 
-                              bus_name, mock_wakeup,
+                              bus_name,
                               mock_status_callback, device_receive_callback);
         if (error != EPROTO_OK) {
             printf("Failed to add bus %d\n", i+1);
