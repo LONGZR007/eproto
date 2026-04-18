@@ -40,9 +40,12 @@
 // 帧结构：| 帧头(1) | 版本号(1) | 长度(2) | 包类型(1) | 原地址(1) | 设备地址(1)
 // | 包ID(2) | 数据(n) | CRC(2) |
 
+// 总线接口发送函数类型
+typedef void (*eproto_bus_send_func_t)(uint8_t* data, uint16_t length);
+
 // 总线接口
 typedef struct {
-    void (*send)(uint8_t* data, uint16_t length);
+    eproto_bus_send_func_t send;  // 发送函数
     eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
     uint8_t self_addr;                // 对应的设备地址
 } eproto_bus_t;
@@ -75,7 +78,7 @@ typedef struct {
 
 // 总线管理结构体
 typedef struct {
-    eproto_bus_t* bus;               // 总线接口
+    eproto_bus_t bus;                // 总线接口（实体）
     const char* name;                // 总线名称，用于日志和调试
 
     // 帧解析器
@@ -160,15 +163,15 @@ void eproto_destroy(eproto_t* eproto);
  * 向eProto实例添加总线
  * @param eproto            指向eProto实例的指针
  * @param self_addr         总线的自身地址
- * @param bus               总线接口结构体
+ * @param send_func         发送函数
  * @param rx_buffer         接收缓冲区
  * @param rx_buffer_size    接收缓冲区大小
  * @param name              总线名称，用于日志和调试
  * @param status_callback   状态回调函数
-* @param receive_callback   接收回调函数
+ * @param receive_callback   接收回调函数
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
  */
-eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_t* bus, uint8_t* rx_buffer,
+eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_send_func_t send_func, uint8_t* rx_buffer,
                               uint16_t rx_buffer_size, const char* name,
                               eproto_status_callback_t status_callback, receive_callback_t receive_callback);
 

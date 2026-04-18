@@ -286,10 +286,8 @@ int main(void) {
     printf("eProto initialized successfully\n");
 
     // 总线8（连接到A2、B3）
-    eproto_bus_t d_bus8 = {.send = d_bus8_send};
-
     uint8_t d_rx_buffer8[256];
-    error = eproto_add_bus(&g_eproto, 0x08, &d_bus8, d_rx_buffer8, sizeof(d_rx_buffer8), "d_bus8",
+    error = eproto_add_bus(&g_eproto, 0x08, d_bus8_send, d_rx_buffer8, sizeof(d_rx_buffer8), "d_bus8",
                            mock_status_callback, d_receive_callback);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 8\n");
@@ -298,10 +296,8 @@ int main(void) {
     printf("Bus 8 added successfully\n");
 
     // 总线9（连接到C7）
-    eproto_bus_t d_bus9 = {.send = d_bus9_send};
-
     uint8_t d_rx_buffer9[256];
-    error = eproto_add_bus(&g_eproto, 0x09, &d_bus9, d_rx_buffer9, sizeof(d_rx_buffer9), "d_bus9",
+    error = eproto_add_bus(&g_eproto, 0x09, d_bus9_send, d_rx_buffer9, sizeof(d_rx_buffer9), "d_bus9",
                            mock_status_callback, d_receive_callback);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 9\n");
@@ -310,10 +306,8 @@ int main(void) {
     printf("Bus 9 added successfully\n");
 
     // 总线10（连接到E12）
-    eproto_bus_t d_bus10 = {.send = d_bus10_send};
-
     uint8_t d_rx_buffer10[256];
-    error = eproto_add_bus(&g_eproto, 0x0A, &d_bus10, d_rx_buffer10, sizeof(d_rx_buffer10), "d_bus10",
+    error = eproto_add_bus(&g_eproto, 0x0A, d_bus10_send, d_rx_buffer10, sizeof(d_rx_buffer10), "d_bus10",
                            mock_status_callback, d_receive_callback);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 10\n");
