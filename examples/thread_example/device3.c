@@ -24,6 +24,8 @@ void device3_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_
 // 设备3发送回调函数
 void device3_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length,
                            void* private_data) {
+    (void)data;
+    (void)length;
     thread_data_t* thread_data = (thread_data_t*)private_data;
     switch (status) {
         case EPROTO_SEND_SUCCESS:
