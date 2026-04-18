@@ -1,3 +1,6 @@
+// Copyright (c) 2026 LONGZR007
+// MIT License
+
 #include "eproto.h"
 #include "ipc_common.h"
 #include <stdio.h>

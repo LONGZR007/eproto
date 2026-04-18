@@ -1,3 +1,6 @@
+// Copyright (c) 2026 LONGZR007
+// MIT License
+
 #ifndef EPROTO_CONFIG_H
 #define EPROTO_CONFIG_H
 
