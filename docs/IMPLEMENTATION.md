@@ -250,7 +250,7 @@ eproto_bus_t bus = {
 
 // 添加总线
 error = eproto_add_bus(&eproto_inst, self_address, &bus, rx_buffer, sizeof(rx_buffer),
-                       "my_bus", handshake_callback, status_callback);
+                       "my_bus", handshake_callback, status_callback, receive_callback);
 ```
 
 ### 10.3 发送数据示例
