@@ -296,14 +296,13 @@ int main(int argc, char *argv[]) {
     // 初始化总线
     uint8_t rx_buffers[5][256];
     for (int i = 0; i < bus_count; i++) {
-        eproto_bus_t bus = {.send = bus_send_functions[i]};
         uint8_t bus_address = bus_configs[i].bus_address;
         int target_count = bus_configs[i].target_count;
         uint8_t* target_addresses = bus_configs[i].target_addresses;
         char bus_name[16];
         sprintf(bus_name, "bus%d", i+1);
         
-        error = eproto_add_bus(&g_eproto, bus_address, &bus, 
+        error = eproto_add_bus(&g_eproto, bus_address, bus_send_functions[i], 
                               rx_buffers[i], sizeof(rx_buffers[i]), 
                               bus_name,
                               mock_status_callback, device_receive_callback);

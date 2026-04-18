@@ -7,12 +7,16 @@
 ```c
 typedef struct {
     void (*send)(uint8_t* data, uint16_t length);
+    eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
+    uint8_t self_addr;                // 对应的设备地址
 } eproto_bus_t;
 ```
 
 - **send**：发送数据的回调函数
   - `data`：要发送的数据
   - `length`：数据长度
+- **rx_buffer**：接收环形缓冲区
+- **self_addr**：总线对应的设备地址
 
 ### 1.2 信号回调接口
 
@@ -50,8 +54,6 @@ typedef struct {
 ```c
 typedef struct {
     eproto_bus_t* bus;               // 总线接口
-    eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
-    uint8_t self_addr;            // 对应的设备地址
     const char* name;                // 总线名称，用于日志和调试
 
     // 帧解析器
