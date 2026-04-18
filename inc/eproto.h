@@ -42,6 +42,7 @@ typedef enum {
 
 // 回调函数类型定义
 typedef void (*eproto_status_callback_t)(eproto_status_t status, uint8_t* data, uint16_t length);
+typedef void (*receive_callback_t)(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
 typedef void (*eproto_handshake_callback_t)(void);
 
 // 设备队列结构体
@@ -61,6 +62,7 @@ typedef struct {
     eproto_frame_parser_t parser;
     // 接口函数
     eproto_status_callback_t status_callback;
+    receive_callback_t receive_callback;
     // 状态变量
     uint16_t next_packet_id;
     uint16_t last_id;  // 上次处理的包ID，用于重发包检测
@@ -138,18 +140,19 @@ void eproto_destroy(eproto_t* eproto);
 /**
  * 向eProto实例添加总线
  * @param eproto            指向eProto实例的指针
- * @param self_addr      总线的自身地址
+ * @param self_addr         总线的自身地址
  * @param bus               总线接口结构体
  * @param rx_buffer         接收缓冲区
  * @param rx_buffer_size    接收缓冲区大小
  * @param name              总线名称，用于日志和调试
  * @param handshake_callback 握手回调函数（仅当启用握手功能时有效）
  * @param status_callback   状态回调函数
+* @param receive_callback   接收回调函数
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
  */
 eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_t* bus, uint8_t* rx_buffer,
                               uint16_t rx_buffer_size, const char* name, eproto_handshake_callback_t handshake_callback,
-                              eproto_status_callback_t status_callback);
+                              eproto_status_callback_t status_callback, receive_callback_t receive_callback);
 
 /**
  * 向指定总线添加目标设备地址
