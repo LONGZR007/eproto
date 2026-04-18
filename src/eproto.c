@@ -1234,8 +1234,8 @@ uint8_t eproto_wait_for_signal(eproto_t* eproto) {
     }
 }
 
-// 定时处理（用于超时和重发）
-uint32_t eproto_tick(eproto_t* eproto) {
+// 处理函数（用于超时和重发）
+uint32_t eproto_process(eproto_t* eproto) {
     if (!eproto)
         return 0;
 

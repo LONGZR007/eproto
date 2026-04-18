@@ -277,7 +277,7 @@ void uart_interrupt_handler(void) {
 ```c
 // 定期调用
 void timer_interrupt_handler(void) {
-    eproto_tick(&eproto_inst);
+    eproto_process(&eproto_inst);
 }
 ```
 

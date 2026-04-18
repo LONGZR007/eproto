@@ -101,7 +101,7 @@ static void mock_signal_send(void) {
     printf("Protocol thread started\\n");
     
     while (1) {
-        eproto_tick(&g_eproto);
+        eproto_process(&g_eproto);
     }
     return NULL;
 }
@@ -128,8 +128,8 @@ static void mock_signal_send(void) {
             insert_pos = last_match.end()
             content = content[:insert_pos] + '\n    pthread_create(&proto_thread, NULL, protocol_thread, NULL);' + content[insert_pos:]
     
-    # Step 7: Remove eproto_tick from main loop
-    main_loop_pattern = r'        eproto_tick\(&g_eproto\);\s*usleep\(10000\);'
+    # Step 7: Remove eproto_process from main loop
+    main_loop_pattern = r'        eproto_process\(&g_eproto\);\s*usleep\(10000\);'
     content = re.sub(main_loop_pattern, '        usleep(10000);', content)
     
     # Write back the modified content

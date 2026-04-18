@@ -198,7 +198,7 @@ void* protocol_thread(void* arg) {
     printf("Protocol thread started\n");
 
     while (1) {
-        eproto_tick(&g_eproto);
+        eproto_process(&g_eproto);
     }
     return NULL;
 }

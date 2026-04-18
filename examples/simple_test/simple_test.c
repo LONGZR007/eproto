@@ -350,7 +350,7 @@ void* device1_process_thread(void* arg) {
     fflush(stdout);
 
     for (int i = 0; i < 50; i++) {
-        eproto_tick(&data->eproto_inst);
+        eproto_process(&data->eproto_inst);
         usleep(50000);
     }
 
@@ -462,7 +462,7 @@ void* device2_process_thread(void* arg) {
     g_current_thread_data = data;
 
     for (int i = 0; i < 50; i++) {
-        eproto_tick(&data->eproto_inst);
+        eproto_process(&data->eproto_inst);
         usleep(50000);
     }
 

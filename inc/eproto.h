@@ -262,11 +262,11 @@ void eproto_receive_data(eproto_t* eproto, uint8_t bus_addr, const uint8_t* data
 uint8_t eproto_wait_for_signal(eproto_t* eproto);
 
 /**
- * 定时处理函数
+ * 处理函数
  * @param eproto   指向eProto实例的指针
  * @return         最小超时时间戳
  */
-uint32_t eproto_tick(eproto_t* eproto);
+uint32_t eproto_process(eproto_t* eproto);
 
 /**
  * 获取指定总线的状态

@@ -124,7 +124,7 @@ void* device3_process_thread(void* arg) {
 
     // 定期处理协议
     for (int i = 0; i < 50; i++) {
-        eproto_tick(&data->eproto_inst);
+        eproto_process(&data->eproto_inst);
         usleep(50000);
     }
 

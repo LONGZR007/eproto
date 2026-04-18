@@ -333,13 +333,13 @@ uint8_t eproto_wait_for_signal(eproto_t* eproto);
   - `eproto`：指向eProto实例的指针
 - **返回值**：信号状态，0表示超时，1表示有信号
 
-#### eproto_tick
+#### eproto_process
 
 ```c
-uint32_t eproto_tick(eproto_t* eproto);
+uint32_t eproto_process(eproto_t* eproto);
 ```
 
-- **功能**：定时处理函数
+- **功能**：处理函数
 - **参数**：
   - `eproto`：指向eProto实例的指针
 - **返回值**：最小超时时间戳
@@ -466,7 +466,7 @@ if (error != EPROTO_OK) {
 
 // 7. 定期调用定时处理函数
 while (1) {
-    eproto_tick(&eproto_inst);
+    eproto_process(&eproto_inst);
     // 其他处理
 }
 
@@ -485,7 +485,7 @@ void uart_interrupt_handler(void) {
 
 // 定时器中断处理函数
 void timer_interrupt_handler(void) {
-    eproto_tick(&eproto_inst);
+    eproto_process(&eproto_inst);
 }
 ```
 
