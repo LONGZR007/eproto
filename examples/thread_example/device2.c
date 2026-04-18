@@ -166,7 +166,7 @@ void* device2_thread(void* arg) {
 
     // 添加路由（使用设备2自己的总线2地址0x02）
     error = eproto_add_bus(&data->eproto_inst, 0x02, &device2_bus, data->rx_buffer, sizeof(data->rx_buffer),
-                           "device2_bus", mock_wakeup, mock_status_callback);
+                           "device2_bus", mock_wakeup, mock_status_callback, device2_receive_callback);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add route\n", data->device_name);
         pthread_exit(NULL);
@@ -186,7 +186,7 @@ void* device2_thread(void* arg) {
 
     // 添加第二条总线（使用设备2自己的总线3地址0x03）
     error = eproto_add_bus(&data->eproto_inst, 0x03, &device2_bus2, data->rx_buffer2, sizeof(data->rx_buffer2),
-                           "device2_bus2", mock_wakeup, mock_status_callback);
+                           "device2_bus2", mock_wakeup, mock_status_callback, device2_receive_callback);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add second bus\n", data->device_name);
         pthread_exit(NULL);

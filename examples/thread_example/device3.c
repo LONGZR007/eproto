@@ -172,7 +172,7 @@ void* device3_thread(void* arg) {
 
     // 添加路由（使用设备3自己的总线4地址0x04）
     error = eproto_add_bus(&data->eproto_inst, 0x04, &device3_bus, data->rx_buffer, sizeof(data->rx_buffer),
-                           "device3_bus", mock_wakeup, mock_status_callback);
+                           "device3_bus", mock_wakeup, mock_status_callback, device3_receive_callback);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add route\n", data->device_name);
         pthread_exit(NULL);
