@@ -1,0 +1,41 @@
+此次合并向多个文件添加了MIT许可证头部，确保代码库的开源许可合规性。许可证包含版权信息（2026 LONGZR007）和标准MIT许可条款，适用于所有修改的文件。
+| 文件 | 变更 |
+|------|---------|
+| inc/eproto.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| inc/eproto_config_example.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| inc/eproto_crc16.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| inc/eproto_def.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| inc/eproto_frame_parser.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| inc/eproto_list.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| inc/eproto_packet_node.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| inc/eproto_ring_buffer.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| src/eproto.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| src/eproto_crc16.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| src/eproto_frame_parser.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| src/eproto_packet_node.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| src/eproto_ring_buffer.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/serial_three_devices/bus_config.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/serial_three_devices/bus_config_macro.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/serial_three_devices/bus_config_macro.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/serial_three_devices/device_macro.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/serial_three_devices/eproto_config.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/serial_three_devices/serial_common.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/serial_three_devices/serial_common.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/simple_test/eproto_config.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/simple_test/fixed_block_allocator.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/simple_test/fixed_block_allocator.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/simple_test/simple_test.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/thread_example/common.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/thread_example/common.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/thread_example/device1.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/thread_example/device2.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/thread_example/device3.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/thread_example/eproto_config.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/thread_example/main.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/topology_test/eproto_config.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/topology_test/ipc_common.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/topology_test/ipc_common.h | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/topology_test/process_a.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/topology_test/process_b.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/topology_test/process_c.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
+| examples/topology_test/process_e.c | - 添加MIT许可证头部，包含版权信息和许可条款 |
