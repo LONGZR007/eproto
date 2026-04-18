@@ -62,8 +62,8 @@ eproto_frame_parser_error_t eproto_frame_parser_parse(eproto_ring_buffer_t* rb, 
     result->version = 0;
     result->length = 0;
     result->packet_type = 0;
-    result->source_address = 0;
-    result->destination_address = 0;
+    result->src_addr = 0;
+    result->dst_addr = 0;
     result->packet_id = 0;
     result->data = NULL;
 
@@ -76,8 +76,7 @@ eproto_frame_parser_error_t eproto_frame_parser_parse(eproto_ring_buffer_t* rb, 
     while (eproto_ring_buffer_available(rb) >= 10) {
         if (is_eproto_frame_header(rb, parser->config.frame_header)) {
             found_header = 1;
-            uint8_t version, length_high, length_low, packet_type, source_address, destination_address, packet_id_high,
-                packet_id_low;
+            uint8_t version, length_high, length_low, packet_type, src_addr, dst_addr, packet_id_high, packet_id_low;
             if (peek_from_eproto_ring_buffer(rb, &version, 1, 1) != 1) {
                 eproto_ring_buffer_discard(rb, 1);
                 continue;
@@ -94,11 +93,11 @@ eproto_frame_parser_error_t eproto_frame_parser_parse(eproto_ring_buffer_t* rb, 
                 eproto_ring_buffer_discard(rb, 1);
                 continue;
             }
-            if (peek_from_eproto_ring_buffer(rb, &source_address, 1, 5) != 1) {
+            if (peek_from_eproto_ring_buffer(rb, &src_addr, 1, 5) != 1) {
                 eproto_ring_buffer_discard(rb, 1);
                 continue;
             }
-            if (peek_from_eproto_ring_buffer(rb, &destination_address, 1, 6) != 1) {
+            if (peek_from_eproto_ring_buffer(rb, &dst_addr, 1, 6) != 1) {
                 eproto_ring_buffer_discard(rb, 1);
                 continue;
             }
@@ -164,8 +163,8 @@ eproto_frame_parser_error_t eproto_frame_parser_parse(eproto_ring_buffer_t* rb, 
             uint8_t pkt_type;
             eproto_ring_buffer_read(rb, &pkt_type, 1);
             result->packet_type = (eproto_packet_type_t)pkt_type;
-            eproto_ring_buffer_read(rb, &result->source_address, 1);
-            eproto_ring_buffer_read(rb, &result->destination_address, 1);
+            eproto_ring_buffer_read(rb, &result->src_addr, 1);
+            eproto_ring_buffer_read(rb, &result->dst_addr, 1);
 
             uint8_t packet_id_bytes[2];
             eproto_ring_buffer_read(rb, packet_id_bytes, 2);
@@ -211,14 +210,14 @@ void eproto_frame_parser_free_result(eproto_frame_parser_t* parser, eproto_frame
     result->version = 0;
     result->length = 0;
     result->packet_type = 0;
-    result->source_address = 0;
-    result->destination_address = 0;
+    result->src_addr = 0;
+    result->dst_addr = 0;
     result->packet_id = 0;
 }
 
-uint16_t eproto_frame_parser_pack_frame(uint8_t* buffer, uint16_t buffer_size, uint8_t frame_header,
-                                        uint8_t source_address, uint8_t destination_address, uint16_t packet_id,
-                                        uint8_t packet_type, uint8_t* data, uint16_t data_length) {
+uint16_t eproto_frame_parser_pack_frame(uint8_t* buffer, uint16_t buffer_size, uint8_t frame_header, uint8_t src_addr,
+                                        uint8_t dst_addr, uint16_t packet_id, uint8_t packet_type, uint8_t* data,
+                                        uint16_t data_length) {
     if (!buffer)
         return 0;
 
@@ -235,8 +234,8 @@ uint16_t eproto_frame_parser_pack_frame(uint8_t* buffer, uint16_t buffer_size, u
     buffer[pos++] = (data_length >> 8) & 0xFF;
     buffer[pos++] = data_length & 0xFF;
     buffer[pos++] = packet_type;
-    buffer[pos++] = source_address;
-    buffer[pos++] = destination_address;
+    buffer[pos++] = src_addr;
+    buffer[pos++] = dst_addr;
     buffer[pos++] = (packet_id >> 8) & 0xFF;
     buffer[pos++] = packet_id & 0xFF;
     if (data && data_length > 0) {

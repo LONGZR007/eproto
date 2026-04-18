@@ -326,7 +326,7 @@ void* device1_process_thread(void* arg) {
     printf("%s: Sending test data (needs reply)...\n", data->device_name);
     fflush(stdout);
     eproto_error_t error =
-        eproto_send(&data->eproto_inst, 0x02, test_data, sizeof(test_data), device1_send_callback, NULL, 0);
+        eproto_send(&data->eproto_inst, 0x02, test_data, sizeof(test_data), device1_send_callback, NULL, 1);
     if (error != EPROTO_OK) {
         printf("%s: Failed to send data\n", data->device_name);
         fflush(stdout);
@@ -340,7 +340,7 @@ void* device1_process_thread(void* arg) {
     uint8_t broadcast_data[] = {0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
     printf("%s: Sending broadcast data to all devices...\n", data->device_name);
     fflush(stdout);
-    error = eproto_send_ex(&data->eproto_inst, 0xFF, broadcast_data, sizeof(broadcast_data), device1_send_callback, NULL, 1, 0, 0);
+    error = eproto_send_ex(&data->eproto_inst, 0xFF, broadcast_data, sizeof(broadcast_data), device1_send_callback, NULL, 0, 0, 0);
     if (error != EPROTO_OK) {
         printf("%s: Failed to send broadcast data\n", data->device_name);
         fflush(stdout);
@@ -350,7 +350,7 @@ void* device1_process_thread(void* arg) {
     fflush(stdout);
 
     for (int i = 0; i < 50; i++) {
-        eproto_tick(&data->eproto_inst);
+        eproto_process(&data->eproto_inst);
         usleep(50000);
     }
 
@@ -388,7 +388,7 @@ void* device1_thread(void* arg) {
     eproto_bus_t device1_bus = {.send = device1_bus_send, .receive = device1_bus_receive};
 
     error = eproto_add_bus(&data->eproto_inst, 0x01, &device1_bus, data->rx_buffer, sizeof(data->rx_buffer),
-                           "device1_bus", mock_wakeup, mock_status_callback, device1_receive_callback);
+                           "device1_bus", mock_wakeup, mock_status_callback);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add bus\n", data->device_name);
         fflush(stdout);
@@ -462,7 +462,7 @@ void* device2_process_thread(void* arg) {
     g_current_thread_data = data;
 
     for (int i = 0; i < 50; i++) {
-        eproto_tick(&data->eproto_inst);
+        eproto_process(&data->eproto_inst);
         usleep(50000);
     }
 
@@ -498,7 +498,7 @@ void* device2_thread(void* arg) {
     eproto_bus_t device2_bus = {.send = device2_bus_send, .receive = device2_bus_receive};
 
     error = eproto_add_bus(&data->eproto_inst, 0x02, &device2_bus, data->rx_buffer, sizeof(data->rx_buffer),
-                           "device2_bus", mock_wakeup, mock_status_callback, device2_receive_callback);
+                           "device2_bus", mock_wakeup, mock_status_callback);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add bus\n", data->device_name);
         fflush(stdout);

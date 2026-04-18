@@ -250,7 +250,7 @@ eproto_bus_t bus = {
 
 // 添加总线
 error = eproto_add_bus(&eproto_inst, self_address, &bus, rx_buffer, sizeof(rx_buffer),
-                       "my_bus", handshake_callback, status_callback, receive_callback);
+                       "my_bus", handshake_callback, status_callback);
 ```
 
 ### 10.3 发送数据示例
@@ -259,7 +259,7 @@ error = eproto_add_bus(&eproto_inst, self_address, &bus, rx_buffer, sizeof(rx_bu
 // 发送数据
 uint8_t data[] = {0x01, 0x02, 0x03, 0x04, 0x05};
 error = eproto_send(&eproto_inst, destination_address, data, sizeof(data),
-                   send_callback, NULL, 0);
+                   send_callback, NULL, 1);
 ```
 
 ### 10.4 接收数据处理示例
@@ -277,7 +277,7 @@ void uart_interrupt_handler(void) {
 ```c
 // 定期调用
 void timer_interrupt_handler(void) {
-    eproto_tick(&eproto_inst);
+    eproto_process(&eproto_inst);
 }
 ```
 

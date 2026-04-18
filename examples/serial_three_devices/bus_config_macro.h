@@ -3,11 +3,12 @@
 
 #include "bus_config.h"
 
-// 宏定义总线配置
-// 用法：
-// #define BUS_CONFIGS \
-//     BUS_CONFIG(0x01, "bus1", 2, {0x02, 0x03}) \
-//     BUS_CONFIG(0x02, "bus2", 1, {0x04})
+/* 宏定义总线配置
+ * 用法：
+ * #define BUS_CONFIGS \
+ *     BUS_CONFIG(0x01, "bus1", 2, {0x02, 0x03}) \
+ *     BUS_CONFIG(0x02, "bus2", 1, {0x04})
+ */
 
 // 总线配置宏
 #define BUS_CONFIG(bus_addr, bus_name, target_cnt, target1, target2, target3, target4) \

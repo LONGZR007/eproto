@@ -216,7 +216,7 @@ void* protocol_thread(void* arg) {
     printf("Protocol thread started\n");
 
     while (1) {
-        eproto_tick(&g_eproto);
+        eproto_process(&g_eproto);
     }
     return NULL;
 }
@@ -263,7 +263,7 @@ int main(void) {
 
     uint8_t a_rx_buffer1[256];
     error = eproto_add_bus(&g_eproto, 0x01, &a_bus1, a_rx_buffer1, sizeof(a_rx_buffer1), "a_bus1", mock_wakeup,
-                           mock_status_callback, a_receive_callback);
+                           mock_status_callback);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 1\n");
         return 1;
@@ -275,7 +275,7 @@ int main(void) {
 
     uint8_t a_rx_buffer2[256];
     error = eproto_add_bus(&g_eproto, 0x02, &a_bus2, a_rx_buffer2, sizeof(a_rx_buffer2), "a_bus2", mock_wakeup,
-                           mock_status_callback, a_receive_callback);
+                           mock_status_callback);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 2\n");
         return 1;
@@ -391,7 +391,7 @@ int main(void) {
                                 printf("\n");
 
                                 error = eproto_send(&g_eproto, device_addr, data, data_len, a_send_callback, NULL,
-                                                    need_reply ? 0 : 1);
+                                                    need_reply);
                                 if (error != EPROTO_OK) {
                                     printf("Failed to send data\n");
                                 }
