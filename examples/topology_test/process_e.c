@@ -129,6 +129,9 @@ void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length
         case EPROTO_STATUS_MULTIPLE_CRC_ERRORS:
             printf("Status: Multiple CRC errors\n");
             break;
+        case EPROTO_STATUS_HANDSHAKE_IN_PROGRESS:
+            printf("Status: Handshake in progress\n");
+            break;
         case EPROTO_STATUS_HANDSHAKE_SUCCESS:
             printf("Status: Handshake success\n");
             break;
@@ -286,7 +289,7 @@ int main(void) {
     eproto_bus_t e_bus11 = {.send = e_bus11_send};
 
     uint8_t e_rx_buffer11[256];
-    error = eproto_add_bus(&g_eproto, 0x0B, &e_bus11, e_rx_buffer11, sizeof(e_rx_buffer11), "e_bus11", mock_wakeup,
+    error = eproto_add_bus(&g_eproto, 0x0B, &e_bus11, e_rx_buffer11, sizeof(e_rx_buffer11), "e_bus11",
                            mock_status_callback, e_receive_callback);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 11\n");
@@ -298,7 +301,7 @@ int main(void) {
     eproto_bus_t e_bus12 = {.send = e_bus12_send};
 
     uint8_t e_rx_buffer12[256];
-    error = eproto_add_bus(&g_eproto, 0x0C, &e_bus12, e_rx_buffer12, sizeof(e_rx_buffer12), "e_bus12", mock_wakeup,
+    error = eproto_add_bus(&g_eproto, 0x0C, &e_bus12, e_rx_buffer12, sizeof(e_rx_buffer12), "e_bus12",
                            mock_status_callback, e_receive_callback);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 12\n");

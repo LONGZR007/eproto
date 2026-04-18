@@ -104,7 +104,6 @@ eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_funct
         eproto->bus_managers[i].last_id = 0;
         eproto->bus_managers[i].crc_error_count = 0;
 #ifdef EPROTO_ENABLE_HANDSHAKE
-        eproto->bus_managers[i].handshake_callback = NULL;
         eproto->bus_managers[i].handshake_required = 0;
 #endif
         eproto->bus_managers[i].current_send_node = NULL;
@@ -178,7 +177,7 @@ static eproto_bus_manager_t* eproto_find_bus_by_destination(eproto_t* eproto, ui
 
 // 添加总线
 eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_t* bus, uint8_t* rx_buffer,
-                              uint16_t rx_buffer_size, const char* name, eproto_handshake_callback_t handshake_callback,
+                              uint16_t rx_buffer_size, const char* name,
                               eproto_status_callback_t status_callback, receive_callback_t receive_callback) {
     if (!eproto || !bus || !rx_buffer || rx_buffer_size == 0)
         return EPROTO_ERROR_INVALID_FRAME;
@@ -202,11 +201,6 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_t*
     // 设置接口函数
     eproto->bus_managers[manager_index].status_callback = status_callback;
     eproto->bus_managers[manager_index].receive_callback = receive_callback;
-#ifdef EPROTO_ENABLE_HANDSHAKE
-    eproto->bus_managers[manager_index].handshake_callback = handshake_callback;
-#else
-    (void)handshake_callback;  // 未使用的参数
-#endif
     // 初始化目标设备地址数组
     eproto->bus_managers[manager_index].destination_device_count = 0;
 
@@ -959,10 +953,10 @@ static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t*
         return true;  // 继续处理其他总线
     }
 
-    // 调用用户的握手回调
-    if (bus_mgr->handshake_callback) {
-        EPROTO_INFO_LOG("%s: Calling handshake callback\n", EPROTO_BUS_NAME(bus_mgr));
-        bus_mgr->handshake_callback();
+    // 调用用户的状态回调通知正在握手
+    if (bus_mgr->status_callback) {
+        EPROTO_INFO_LOG("%s: Calling status callback for handshake in progress\n", EPROTO_BUS_NAME(bus_mgr));
+        bus_mgr->status_callback(EPROTO_STATUS_HANDSHAKE_IN_PROGRESS, NULL, 0);
     }
 
     // 生成握手包的包ID
