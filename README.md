@@ -102,7 +102,7 @@ error = eproto_add_destination_device(&eproto_inst, bus_address, destination_add
 // 发送数据
 uint8_t data[] = {0x01, 0x02, 0x03, 0x04, 0x05};
 error = eproto_send(&eproto_inst, destination_address, data, sizeof(data),
-                   send_callback, NULL, 0);
+                   send_callback, NULL, 1);
 ```
 
 ### 6. 接收数据处理

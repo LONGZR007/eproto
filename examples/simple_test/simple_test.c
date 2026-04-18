@@ -326,7 +326,7 @@ void* device1_process_thread(void* arg) {
     printf("%s: Sending test data (needs reply)...\n", data->device_name);
     fflush(stdout);
     eproto_error_t error =
-        eproto_send(&data->eproto_inst, 0x02, test_data, sizeof(test_data), device1_send_callback, NULL, 0);
+        eproto_send(&data->eproto_inst, 0x02, test_data, sizeof(test_data), device1_send_callback, NULL, 1);
     if (error != EPROTO_OK) {
         printf("%s: Failed to send data\n", data->device_name);
         fflush(stdout);
@@ -340,7 +340,7 @@ void* device1_process_thread(void* arg) {
     uint8_t broadcast_data[] = {0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
     printf("%s: Sending broadcast data to all devices...\n", data->device_name);
     fflush(stdout);
-    error = eproto_send_ex(&data->eproto_inst, 0xFF, broadcast_data, sizeof(broadcast_data), device1_send_callback, NULL, 1, 0, 0);
+    error = eproto_send_ex(&data->eproto_inst, 0xFF, broadcast_data, sizeof(broadcast_data), device1_send_callback, NULL, 0, 0, 0);
     if (error != EPROTO_OK) {
         printf("%s: Failed to send broadcast data\n", data->device_name);
         fflush(stdout);

@@ -450,7 +450,7 @@ int main(void) {
                                 printf("\n");
 
                                 error = eproto_send(&g_eproto, device_addr, data, data_len, b_send_callback, NULL,
-                                                    need_reply ? 0 : 1);
+                                                    need_reply);
                                 if (error != EPROTO_OK) {
                                     printf("Failed to send data\n");
                                 }

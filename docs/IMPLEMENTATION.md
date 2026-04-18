@@ -259,7 +259,7 @@ error = eproto_add_bus(&eproto_inst, self_address, &bus, rx_buffer, sizeof(rx_bu
 // 发送数据
 uint8_t data[] = {0x01, 0x02, 0x03, 0x04, 0x05};
 error = eproto_send(&eproto_inst, destination_address, data, sizeof(data),
-                   send_callback, NULL, 0);
+                   send_callback, NULL, 1);
 ```
 
 ### 10.4 接收数据处理示例
