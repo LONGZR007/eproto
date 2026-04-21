@@ -18,6 +18,7 @@ eProto是一个轻量级、可移植的嵌入式通信协议库，专为嵌入�
 - **灵活配置**：可根据具体应用场景进行配置
 - **多总线支持**：支持多个总线同时工作
 - **握手机制**：可选的设备握手功能，确保通信可靠性
+- **转发回调机制**：支持在转发过程中进行加密/解密和数据转换
 
 ## 目录结构
 
@@ -78,14 +79,9 @@ eproto_error_t error = eproto_init(&eproto_inst, &user_functions);
 ### 3. 添加总线
 
 ```c
-// 定义总线接口
-eproto_bus_t bus = {
-    .send = my_bus_send
-};
-
-// 添加总线
-error = eproto_add_bus(&eproto_inst, self_address, &bus, rx_buffer, sizeof(rx_buffer),
-                       "my_bus", status_callback, receive_callback);
+// 添加总线 (可选：最后一个参数为转发回调函数，可设置为 NULL)
+error = eproto_add_bus(&eproto_inst, self_address, my_send_func, rx_buffer, sizeof(rx_buffer),
+                       "my_bus", status_callback, receive_callback, NULL);
 ```
 
 ### 4. 添加目标设备
@@ -151,6 +147,7 @@ void timer_interrupt_handler(void) {
 - [实现文档](docs/IMPLEMENTATION.md)：介绍协议的实现思路和架构
 - [API参考](docs/API_REFERENCE.md)：详细的API使用说明
 - [移植指南](docs/PORTING_GUIDE.md)：详细的移植步骤和注意事项
+- [转发回调机制](docs/FORWARD_CALLBACK_IMPLEMENTATION.md)：详细介绍转发回调机制的使用方法
 
 ## 许可证
 
