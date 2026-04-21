@@ -67,8 +67,8 @@ eproto_add_bus(&g_eproto, 0x01, my_send_func, rx_buffer, sizeof(rx_buffer), "bus
 ### 2.3 回调函数参数说明
 
 #### 转发回调函数参数
-- `source_addr`: 源设备地址
-- `dest_addr`: 目标设备地址
+- `source_addr`: 数据来源总线的地址
+- `dest_addr`: 数据目标总线的地址
 - `data`: 原始数据
 - `length`: 原始数据长度
 - `out_data`: 输出数据（加密后的数据）
@@ -77,8 +77,8 @@ eproto_add_bus(&g_eproto, 0x01, my_send_func, rx_buffer, sizeof(rx_buffer), "bus
 - `private_data`: 私有数据，可用于传递额外信息给后处理回调
 
 #### 后处理回调函数参数
-- `source_addr`: 源设备地址
-- `dest_addr`: 目标设备地址
+- `source_addr`: 数据来源总线的地址
+- `dest_addr`: 数据目标总线的地址
 - `out_data`: 转发的数据
 - `out_length`: 转发的数据长度
 - `private_data`: 从转发回调传递的私有数据

@@ -1075,7 +1075,7 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
             
             if (bus_mgr->forward_callback) {
                 eproto_error_t error = bus_mgr->forward_callback(
-                    frame->src_addr, frame->dst_addr,
+                    current_bus_mgr->bus.self_addr, bus_mgr->bus.self_addr,
                     frame->data, frame->length,
                     &temp_data, &forward_length,
                     &post_func,
@@ -1149,18 +1149,18 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
         eproto_forward_post_func_t post_func = NULL;
         
         if (destination_bus_mgr->forward_callback) {
-            eproto_error_t error = destination_bus_mgr->forward_callback(
-                frame->src_addr, frame->dst_addr,
-                frame->data, frame->length,
-                &temp_data, &forward_length,
-                &post_func,
-                &private_data
-            );
-            
-            if (error == EPROTO_OK && temp_data) {
-                forward_data = temp_data;
+                eproto_error_t error = destination_bus_mgr->forward_callback(
+                    current_bus_mgr->bus.self_addr, destination_bus_mgr->bus.self_addr,
+                    frame->data, frame->length,
+                    &temp_data, &forward_length,
+                    &post_func,
+                    &private_data
+                );
+                
+                if (error == EPROTO_OK && temp_data) {
+                    forward_data = temp_data;
+                }
             }
-        }
 
         // 创建新的数据包节点，保持原始信息不变
         eproto_node_t* forward_node =
