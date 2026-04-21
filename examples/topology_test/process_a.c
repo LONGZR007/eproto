@@ -277,7 +277,7 @@ int main(void) {
     // 总线1（连接到B3、C6、E11）
     uint8_t a_rx_buffer1[256];
     error = eproto_add_bus(&g_eproto, 0x01, a_bus1_send, a_rx_buffer1, sizeof(a_rx_buffer1), "a_bus1",
-                           mock_status_callback, a_receive_callback);
+                           mock_status_callback, a_receive_callback, NULL);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 1\n");
         return 1;
@@ -287,7 +287,7 @@ int main(void) {
     // 总线2（连接到D8）
     uint8_t a_rx_buffer2[256];
     error = eproto_add_bus(&g_eproto, 0x02, a_bus2_send, a_rx_buffer2, sizeof(a_rx_buffer2), "a_bus2",
-                           mock_status_callback, a_receive_callback);
+                           mock_status_callback, a_receive_callback, NULL);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 2\n");
         return 1;

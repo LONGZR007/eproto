@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
         error = eproto_add_bus(&g_eproto, bus_address, bus_send_functions[i], 
                               rx_buffers[i], sizeof(rx_buffers[i]), 
                               bus_name,
-                              mock_status_callback, device_receive_callback);
+                              mock_status_callback, device_receive_callback, NULL);
         if (error != EPROTO_OK) {
             printf("Failed to add bus %d\n", i+1);
             for (int j = 0; j < bus_count; j++) {

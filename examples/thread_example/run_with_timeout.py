@@ -49,7 +49,7 @@ def run_with_timeout(command, timeout=5):
 
 if __name__ == "__main__":
     # 运行 thread_example
-    executable = "./thread_example"
+    executable = "./bin/thread_example"
     
     # 检查文件是否存在
     if not os.path.exists(executable):
