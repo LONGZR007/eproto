@@ -28,15 +28,27 @@
 __thread thread_data_t* g_current_thread_data = NULL;
 
 // 全局变量（共享缓冲区）
-uint8_t g_shared_buffer_ab[SHARED_BUFFER_SIZE] = {0};  // A-B 共享缓冲区
+// A-B 之间的双向缓冲区
+uint8_t g_shared_buffer_ab[SHARED_BUFFER_SIZE] = {0};  // A 发送到 B 的缓冲区
 uint16_t g_shared_buffer_ab_head = 0;
 uint16_t g_shared_buffer_ab_tail = 0;
 pthread_mutex_t g_mutex_ab = PTHREAD_MUTEX_INITIALIZER;
 
-uint8_t g_shared_buffer_bc[SHARED_BUFFER_SIZE] = {0};  // B-C 共享缓冲区
+uint8_t g_shared_buffer_ba[SHARED_BUFFER_SIZE] = {0};  // B 发送到 A 的缓冲区
+uint16_t g_shared_buffer_ba_head = 0;
+uint16_t g_shared_buffer_ba_tail = 0;
+pthread_mutex_t g_mutex_ba = PTHREAD_MUTEX_INITIALIZER;
+
+// B-C 之间的双向缓冲区
+uint8_t g_shared_buffer_bc[SHARED_BUFFER_SIZE] = {0};  // B 发送到 C 的缓冲区
 uint16_t g_shared_buffer_bc_head = 0;
 uint16_t g_shared_buffer_bc_tail = 0;
 pthread_mutex_t g_mutex_bc = PTHREAD_MUTEX_INITIALIZER;
+
+uint8_t g_shared_buffer_cb[SHARED_BUFFER_SIZE] = {0};  // C 发送到 B 的缓冲区
+uint16_t g_shared_buffer_cb_head = 0;
+uint16_t g_shared_buffer_cb_tail = 0;
+pthread_mutex_t g_mutex_cb = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_mutex_t g_eproto_lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -82,7 +94,7 @@ void device_c_receive_callback(uint8_t source_address, uint16_t packet_id, uint8
     free(decrypted_data);
 }
 
-// 设备 A 总线发送函数（发送到 A-B 共享缓冲区）
+// 设备 A 总线发送函数（发送到 A-B 缓冲区）
 void device_a_bus_send(uint8_t* data, uint16_t length) {
     pthread_mutex_lock(&g_mutex_ab);
     for (uint16_t i = 0; i < length; i++) {
@@ -100,15 +112,15 @@ void device_a_bus_send(uint8_t* data, uint16_t length) {
     print_hex(data, length, "");
 }
 
-// 设备 A 总线接收函数（从 A-B 共享缓冲区接收）
+// 设备 A 总线接收函数（从 B-A 缓冲区接收）
 uint16_t device_a_bus_receive(uint8_t* buffer, uint16_t size) {
     uint16_t count = 0;
-    pthread_mutex_lock(&g_mutex_ab);
-    while (g_shared_buffer_ab_tail != g_shared_buffer_ab_head && count < size) {
-        buffer[count++] = g_shared_buffer_ab[g_shared_buffer_ab_tail];
-        g_shared_buffer_ab_tail = (g_shared_buffer_ab_tail + 1) % SHARED_BUFFER_SIZE;
+    pthread_mutex_lock(&g_mutex_ba);
+    while (g_shared_buffer_ba_tail != g_shared_buffer_ba_head && count < size) {
+        buffer[count++] = g_shared_buffer_ba[g_shared_buffer_ba_tail];
+        g_shared_buffer_ba_tail = (g_shared_buffer_ba_tail + 1) % SHARED_BUFFER_SIZE;
     }
-    pthread_mutex_unlock(&g_mutex_ab);
+    pthread_mutex_unlock(&g_mutex_ba);
     if (count > 0) {
         printf("Device A received %d bytes: ", count);
         print_hex(buffer, count, "");
@@ -116,25 +128,25 @@ uint16_t device_a_bus_receive(uint8_t* buffer, uint16_t size) {
     return count;
 }
 
-// 设备 B 总线 1 发送函数（发送到 A-B 共享缓冲区）
+// 设备 B 总线 1 发送函数（发送到 B-A 缓冲区）
 void device_b_bus1_send(uint8_t* data, uint16_t length) {
-    pthread_mutex_lock(&g_mutex_ab);
+    pthread_mutex_lock(&g_mutex_ba);
     for (uint16_t i = 0; i < length; i++) {
-        uint16_t next_head = (g_shared_buffer_ab_head + 1) % SHARED_BUFFER_SIZE;
-        if (next_head != g_shared_buffer_ab_tail) {
-            g_shared_buffer_ab[g_shared_buffer_ab_head] = data[i];
-            g_shared_buffer_ab_head = next_head;
+        uint16_t next_head = (g_shared_buffer_ba_head + 1) % SHARED_BUFFER_SIZE;
+        if (next_head != g_shared_buffer_ba_tail) {
+            g_shared_buffer_ba[g_shared_buffer_ba_head] = data[i];
+            g_shared_buffer_ba_head = next_head;
         } else {
             printf("Device B (bus 1): Buffer overflow\n");
             break;
         }
     }
-    pthread_mutex_unlock(&g_mutex_ab);
+    pthread_mutex_unlock(&g_mutex_ba);
     printf("Device B (bus 1) sent: ");
     print_hex(data, length, "");
 }
 
-// 设备 B 总线 1 接收函数（从 A-B 共享缓冲区接收）
+// 设备 B 总线 1 接收函数（从 A-B 缓冲区接收）
 uint16_t device_b_bus1_receive(uint8_t* buffer, uint16_t size) {
     uint16_t count = 0;
     pthread_mutex_lock(&g_mutex_ab);
@@ -150,7 +162,7 @@ uint16_t device_b_bus1_receive(uint8_t* buffer, uint16_t size) {
     return count;
 }
 
-// 设备 B 总线 2 发送函数（发送到 B-C 共享缓冲区）
+// 设备 B 总线 2 发送函数（发送到 B-C 缓冲区）
 void device_b_bus2_send(uint8_t* data, uint16_t length) {
     pthread_mutex_lock(&g_mutex_bc);
     for (uint16_t i = 0; i < length; i++) {
@@ -168,15 +180,15 @@ void device_b_bus2_send(uint8_t* data, uint16_t length) {
     print_hex(data, length, "");
 }
 
-// 设备 B 总线 2 接收函数（从 B-C 共享缓冲区接收）
+// 设备 B 总线 2 接收函数（从 C-B 缓冲区接收）
 uint16_t device_b_bus2_receive(uint8_t* buffer, uint16_t size) {
     uint16_t count = 0;
-    pthread_mutex_lock(&g_mutex_bc);
-    while (g_shared_buffer_bc_tail != g_shared_buffer_bc_head && count < size) {
-        buffer[count++] = g_shared_buffer_bc[g_shared_buffer_bc_tail];
-        g_shared_buffer_bc_tail = (g_shared_buffer_bc_tail + 1) % SHARED_BUFFER_SIZE;
+    pthread_mutex_lock(&g_mutex_cb);
+    while (g_shared_buffer_cb_tail != g_shared_buffer_cb_head && count < size) {
+        buffer[count++] = g_shared_buffer_cb[g_shared_buffer_cb_tail];
+        g_shared_buffer_cb_tail = (g_shared_buffer_cb_tail + 1) % SHARED_BUFFER_SIZE;
     }
-    pthread_mutex_unlock(&g_mutex_bc);
+    pthread_mutex_unlock(&g_mutex_cb);
     if (count > 0) {
         printf("Device B (bus 2) received %d bytes: ", count);
         print_hex(buffer, count, "");
@@ -184,25 +196,25 @@ uint16_t device_b_bus2_receive(uint8_t* buffer, uint16_t size) {
     return count;
 }
 
-// 设备 C 总线发送函数（发送到 B-C 共享缓冲区）
+// 设备 C 总线发送函数（发送到 C-B 缓冲区）
 void device_c_bus_send(uint8_t* data, uint16_t length) {
-    pthread_mutex_lock(&g_mutex_bc);
+    pthread_mutex_lock(&g_mutex_cb);
     for (uint16_t i = 0; i < length; i++) {
-        uint16_t next_head = (g_shared_buffer_bc_head + 1) % SHARED_BUFFER_SIZE;
-        if (next_head != g_shared_buffer_bc_tail) {
-            g_shared_buffer_bc[g_shared_buffer_bc_head] = data[i];
-            g_shared_buffer_bc_head = next_head;
+        uint16_t next_head = (g_shared_buffer_cb_head + 1) % SHARED_BUFFER_SIZE;
+        if (next_head != g_shared_buffer_cb_tail) {
+            g_shared_buffer_cb[g_shared_buffer_cb_head] = data[i];
+            g_shared_buffer_cb_head = next_head;
         } else {
             printf("Device C: Buffer overflow\n");
             break;
         }
     }
-    pthread_mutex_unlock(&g_mutex_bc);
+    pthread_mutex_unlock(&g_mutex_cb);
     printf("Device C sent: ");
     print_hex(data, length, "");
 }
 
-// 设备 C 总线接收函数（从 B-C 共享缓冲区接收）
+// 设备 C 总线接收函数（从 B-C 缓冲区接收）
 uint16_t device_c_bus_receive(uint8_t* buffer, uint16_t size) {
     uint16_t count = 0;
     pthread_mutex_lock(&g_mutex_bc);

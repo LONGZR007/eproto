@@ -82,15 +82,27 @@ typedef struct {
 extern __thread thread_data_t* g_current_thread_data;
 
 // 全局变量（共享缓冲区）
-extern uint8_t g_shared_buffer_ab[SHARED_BUFFER_SIZE];  // A-B 共享缓冲区
+// A-B 之间的双向缓冲区
+extern uint8_t g_shared_buffer_ab[SHARED_BUFFER_SIZE];  // A 发送到 B 的缓冲区
 extern uint16_t g_shared_buffer_ab_head;
 extern uint16_t g_shared_buffer_ab_tail;
 extern pthread_mutex_t g_mutex_ab;
 
-extern uint8_t g_shared_buffer_bc[SHARED_BUFFER_SIZE];  // B-C 共享缓冲区
+extern uint8_t g_shared_buffer_ba[SHARED_BUFFER_SIZE];  // B 发送到 A 的缓冲区
+extern uint16_t g_shared_buffer_ba_head;
+extern uint16_t g_shared_buffer_ba_tail;
+extern pthread_mutex_t g_mutex_ba;
+
+// B-C 之间的双向缓冲区
+extern uint8_t g_shared_buffer_bc[SHARED_BUFFER_SIZE];  // B 发送到 C 的缓冲区
 extern uint16_t g_shared_buffer_bc_head;
 extern uint16_t g_shared_buffer_bc_tail;
 extern pthread_mutex_t g_mutex_bc;
+
+extern uint8_t g_shared_buffer_cb[SHARED_BUFFER_SIZE];  // C 发送到 B 的缓冲区
+extern uint16_t g_shared_buffer_cb_head;
+extern uint16_t g_shared_buffer_cb_tail;
+extern pthread_mutex_t g_mutex_cb;
 
 extern pthread_mutex_t g_eproto_lock;
 
