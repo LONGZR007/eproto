@@ -76,33 +76,6 @@ typedef struct {
     struct eproto_list_head wait_queue;  // 等待应答队列
 } eproto_device_queues_t;
 
-// 总线管理结构体
-typedef struct {
-    eproto_bus_t bus;                // 总线接口（实体）
-    const char* name;                // 总线名称，用于日志和调试
-
-    // 帧解析器
-    eproto_frame_parser_t parser;
-    // 接口函数
-    eproto_status_callback_t status_callback;
-    receive_callback_t receive_callback;
-    // 状态变量
-    uint16_t next_packet_id;
-    uint16_t last_id;  // 上次处理的包ID，用于重发包检测
-    uint8_t crc_error_count;
-    eproto_node_t* current_send_node;  // 当前正在发送的节点
-#ifdef EPROTO_ENABLE_HANDSHAKE
-    // 握手相关
-    uint8_t handshake_required;  // 握手标志
-#endif
-    // 设备队列
-    eproto_device_queues_t device_queues;
-    // 目标设备地址数组
-    uint8_t destination_devices[EPROTO_MAX_DESTINATION_DEVICES];
-    // 目标设备地址数量
-    uint8_t destination_device_count;
-} eproto_bus_manager_t;
-
 // 用户接口结构体
 typedef struct {
     // 内存分配接口
@@ -137,6 +110,46 @@ typedef enum {
     EPROTO_ERROR_WAKEUP_FAILED
 } eproto_error_t;
 
+// 转发后处理回调函数类型
+typedef void (*eproto_forward_post_func_t)(uint8_t source_addr, uint8_t dest_addr, 
+                                         uint8_t* out_data, uint16_t out_length,
+                                         void* private_data);
+
+// 转发回调函数类型
+typedef eproto_error_t (*eproto_forward_callback_t)(uint8_t source_addr, uint8_t dest_addr, 
+                                                   uint8_t* data, uint16_t length, 
+                                                   uint8_t** out_data, uint16_t* out_length,
+                                                   eproto_forward_post_func_t* post_func,
+                                                   void** private_data);
+
+// 总线管理结构体
+typedef struct {
+    eproto_bus_t bus;                // 总线接口（实体）
+    const char* name;                // 总线名称，用于日志和调试
+
+    // 帧解析器
+    eproto_frame_parser_t parser;
+    // 接口函数
+    eproto_status_callback_t status_callback;
+    receive_callback_t receive_callback;
+    eproto_forward_callback_t forward_callback;  // 新增：转发回调
+    // 状态变量
+    uint16_t next_packet_id;
+    uint16_t last_id;  // 上次处理的包ID，用于重发包检测
+    uint8_t crc_error_count;
+    eproto_node_t* current_send_node;  // 当前正在发送的节点
+#ifdef EPROTO_ENABLE_HANDSHAKE
+    // 握手相关
+    uint8_t handshake_required;  // 握手标志
+#endif
+    // 设备队列
+    eproto_device_queues_t device_queues;
+    // 目标设备地址数组
+    uint8_t destination_devices[EPROTO_MAX_DESTINATION_DEVICES];
+    // 目标设备地址数量
+    uint8_t destination_device_count;
+} eproto_bus_manager_t;
+
 // eProto实例结构体（支持多实例）
 typedef struct {
     eproto_user_functions_t user_functions;  // 用户函数
@@ -169,11 +182,13 @@ void eproto_destroy(eproto_t* eproto);
  * @param name              总线名称，用于日志和调试
  * @param status_callback   状态回调函数
  * @param receive_callback   接收回调函数
+ * @param forward_callback  转发回调函数
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
  */
 eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_send_func_t send_func, uint8_t* rx_buffer,
                               uint16_t rx_buffer_size, const char* name,
-                              eproto_status_callback_t status_callback, receive_callback_t receive_callback);
+                              eproto_status_callback_t status_callback, receive_callback_t receive_callback,
+                              eproto_forward_callback_t forward_callback);
 
 /**
  * 向指定总线添加目标设备地址

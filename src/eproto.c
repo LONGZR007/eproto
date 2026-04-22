@@ -97,6 +97,7 @@ eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_funct
         // 初始化接口函数
         eproto->bus_managers[i].status_callback = NULL;
         eproto->bus_managers[i].receive_callback = NULL;
+        eproto->bus_managers[i].forward_callback = NULL;  // 新增：初始化转发回调
         // 初始化状态变量
         eproto->bus_managers[i].next_packet_id = 1;
         eproto->bus_managers[i].last_id = 0;
@@ -174,7 +175,8 @@ static eproto_bus_manager_t* eproto_find_bus_by_destination(eproto_t* eproto, ui
 // 添加总线
 eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_send_func_t send_func, uint8_t* rx_buffer,
                               uint16_t rx_buffer_size, const char* name,
-                              eproto_status_callback_t status_callback, receive_callback_t receive_callback) {
+                              eproto_status_callback_t status_callback, receive_callback_t receive_callback,
+                              eproto_forward_callback_t forward_callback) {
     if (!eproto || !send_func || !rx_buffer || rx_buffer_size == 0)
         return EPROTO_ERROR_INVALID_FRAME;
 
@@ -198,6 +200,7 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_se
     // 设置接口函数
     eproto->bus_managers[manager_index].status_callback = status_callback;
     eproto->bus_managers[manager_index].receive_callback = receive_callback;
+    eproto->bus_managers[manager_index].forward_callback = forward_callback;  // 新增：设置转发回调
     // 初始化目标设备地址数组
     eproto->bus_managers[manager_index].destination_device_count = 0;
 
@@ -1063,10 +1066,31 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
             if (!bus_mgr->bus.send || bus_mgr == current_bus_mgr)
                 continue;  // 跳过当前总线
 
+            // 检查是否设置了转发回调
+            uint8_t* forward_data = frame->data;
+            uint16_t forward_length = frame->length;
+            uint8_t* temp_data = NULL;
+            void* private_data = NULL;  // 新增：局部变量存储私有数据
+            eproto_forward_post_func_t post_func = NULL;
+            
+            if (bus_mgr->forward_callback) {
+                eproto_error_t error = bus_mgr->forward_callback(
+                    current_bus_mgr->bus.self_addr, bus_mgr->bus.self_addr,
+                    frame->data, frame->length,
+                    &temp_data, &forward_length,
+                    &post_func,
+                    &private_data
+                );
+                
+                if (error == EPROTO_OK && temp_data) {
+                    forward_data = temp_data;
+                }
+            }
+
             // 创建新的广播包节点，保持原始信息不变
             eproto_node_t* forward_node = eproto_packet_node_create(
                 eproto->user_functions.malloc, eproto->user_functions.free, frame->src_addr, EPROTO_BROADCAST_ADDRESS,
-                frame->packet_id, frame->data, frame->length, NULL, NULL,
+                frame->packet_id, forward_data, forward_length, NULL, NULL,
                 0,                          // need_reply - 转发包不需要等待回调
                 frame->packet_type, 0, 0);  // 转发包不重发，无超时
 
@@ -1090,6 +1114,15 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
                 EPROTO_ERROR_LOG("%s: Failed to create forward node for bus %02X\n", EPROTO_BUS_NAME(current_bus_mgr),
                                  bus_mgr->bus.self_addr);
             }
+            
+            // 调用后处理回调
+            if (post_func) {
+                post_func(
+                    frame->src_addr, frame->dst_addr,
+                    forward_data, forward_length,
+                    private_data
+                );
+            }
         }
 
         // 调用当前总线的接收回调函数，通知用户收到了广播包
@@ -1108,10 +1141,31 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
         EPROTO_INFO_LOG("%s: Found destination bus for %02X, forwarding...\n", EPROTO_BUS_NAME(current_bus_mgr),
                         frame->dst_addr);
 
+        // 检查是否设置了转发回调
+        uint8_t* forward_data = frame->data;
+        uint16_t forward_length = frame->length;
+        uint8_t* temp_data = NULL;
+        void* private_data = NULL;  // 新增：局部变量存储私有数据
+        eproto_forward_post_func_t post_func = NULL;
+        
+        if (destination_bus_mgr->forward_callback) {
+                eproto_error_t error = destination_bus_mgr->forward_callback(
+                    current_bus_mgr->bus.self_addr, destination_bus_mgr->bus.self_addr,
+                    frame->data, frame->length,
+                    &temp_data, &forward_length,
+                    &post_func,
+                    &private_data
+                );
+                
+                if (error == EPROTO_OK && temp_data) {
+                    forward_data = temp_data;
+                }
+            }
+
         // 创建新的数据包节点，保持原始信息不变
         eproto_node_t* forward_node =
             eproto_packet_node_create(eproto->user_functions.malloc, eproto->user_functions.free, frame->src_addr,
-                                      frame->dst_addr, frame->packet_id, frame->data, frame->length, NULL, NULL,
+                                      frame->dst_addr, frame->packet_id, forward_data, forward_length, NULL, NULL,
                                       0,                          // need_reply - 转发包不需要等待回调
                                       frame->packet_type, 0, 0);  // 转发包不重发，无超时
 
@@ -1132,6 +1186,15 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
             EPROTO_INFO_LOG("%s: Forwarded packet successfully\n", EPROTO_BUS_NAME(current_bus_mgr));
         } else {
             EPROTO_ERROR_LOG("%s: Failed to create forward node\n", EPROTO_BUS_NAME(current_bus_mgr));
+        }
+        
+        // 调用后处理回调
+        if (post_func) {
+            post_func(
+                frame->src_addr, frame->dst_addr,
+                forward_data, forward_length,
+                private_data
+            );
         }
     } else {
         EPROTO_WARNING_LOG("%s: No route found for %02X, dropping packet\n", EPROTO_BUS_NAME(current_bus_mgr),
