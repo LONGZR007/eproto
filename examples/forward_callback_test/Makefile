@@ -7,28 +7,21 @@ LDFLAGS = -lpthread
 TARGET = forward_callback_test
 
 # 源文件
-SRCS = main.c common.c device_a.c device_b.c device_c.c
+SRCS = main.c common.c device_a.c device_b.c device_c.c fixed_block_allocator.c
 
-# 目标文件
-OBJS = $(SRCS:.c=.o)
-
-# 依赖库
-LIB_EPROTO = ../../build/libeproto.a
+# 源文件（eproto 库）
+EPROTO_SRCS = ../../src/eproto.c ../../src/eproto_crc16.c ../../src/eproto_packet_node.c ../../src/eproto_ring_buffer.c ../../src/eproto_frame_parser.c
 
 # 默认目标
 all: $(TARGET)
 
 # 编译目标
-$(TARGET): $(OBJS) $(LIB_EPROTO)
-	$(CC) $(OBJS) $(LIB_EPROTO) $(LDFLAGS) -o $(TARGET)
-
-# 编译源文件
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(TARGET): $(SRCS)
+	$(CC) $(CFLAGS) $(SRCS) $(EPROTO_SRCS) $(LDFLAGS) -o $(TARGET)
 
 # 清理目标
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(TARGET)
 
 # 运行测试
 run:

@@ -24,13 +24,30 @@
 
 #include "common.h"
 
-// 全局变量
+// 线程局部存储
+__thread thread_data_t* g_current_thread_data = NULL;
+
+// 全局变量（共享缓冲区）
+uint8_t g_shared_buffer_ab[SHARED_BUFFER_SIZE] = {0};  // A-B 共享缓冲区
+uint16_t g_shared_buffer_ab_head = 0;
+uint16_t g_shared_buffer_ab_tail = 0;
+pthread_mutex_t g_mutex_ab = PTHREAD_MUTEX_INITIALIZER;
+
+uint8_t g_shared_buffer_bc[SHARED_BUFFER_SIZE] = {0};  // B-C 共享缓冲区
+uint16_t g_shared_buffer_bc_head = 0;
+uint16_t g_shared_buffer_bc_tail = 0;
+pthread_mutex_t g_mutex_bc = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_mutex_t g_eproto_lock = PTHREAD_MUTEX_INITIALIZER;
+
 thread_data_t* g_device_a_data = NULL;
 thread_data_t* g_device_b_data = NULL;
 thread_data_t* g_device_c_data = NULL;
 
 // 模拟状态回调函数
 void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length) {
+    (void)data;
+    (void)length;
     printf("Status callback: status = %d\n", status);
 }
 
@@ -65,68 +82,140 @@ void device_c_receive_callback(uint8_t source_address, uint16_t packet_id, uint8
     free(decrypted_data);
 }
 
-// 设备 A 总线发送函数
+// 设备 A 总线发送函数（发送到 A-B 共享缓冲区）
 void device_a_bus_send(uint8_t* data, uint16_t length) {
+    pthread_mutex_lock(&g_mutex_ab);
+    for (uint16_t i = 0; i < length; i++) {
+        uint16_t next_head = (g_shared_buffer_ab_head + 1) % SHARED_BUFFER_SIZE;
+        if (next_head != g_shared_buffer_ab_tail) {
+            g_shared_buffer_ab[g_shared_buffer_ab_head] = data[i];
+            g_shared_buffer_ab_head = next_head;
+        } else {
+            printf("Device A: Buffer overflow\n");
+            break;
+        }
+    }
+    pthread_mutex_unlock(&g_mutex_ab);
     printf("Device A sent: ");
     print_hex(data, length, "");
-    
-    // 将数据发送到设备 B
-    if (g_device_b_data) {
-        pthread_mutex_lock(&g_device_b_data->tx_mutex);
-        memcpy(g_device_b_data->tx_buffer, data, length);
-        g_device_b_data->tx_length = length;
-        g_device_b_data->tx_bus_address = BUS_A_B_ADDRESS;
-        pthread_cond_signal(&g_device_b_data->tx_cond);
-        pthread_mutex_unlock(&g_device_b_data->tx_mutex);
-    }
 }
 
-// 设备 B 总线 1 发送函数（连接到设备 A）
+// 设备 A 总线接收函数（从 A-B 共享缓冲区接收）
+uint16_t device_a_bus_receive(uint8_t* buffer, uint16_t size) {
+    uint16_t count = 0;
+    pthread_mutex_lock(&g_mutex_ab);
+    while (g_shared_buffer_ab_tail != g_shared_buffer_ab_head && count < size) {
+        buffer[count++] = g_shared_buffer_ab[g_shared_buffer_ab_tail];
+        g_shared_buffer_ab_tail = (g_shared_buffer_ab_tail + 1) % SHARED_BUFFER_SIZE;
+    }
+    pthread_mutex_unlock(&g_mutex_ab);
+    if (count > 0) {
+        printf("Device A received %d bytes: ", count);
+        print_hex(buffer, count, "");
+    }
+    return count;
+}
+
+// 设备 B 总线 1 发送函数（发送到 A-B 共享缓冲区）
 void device_b_bus1_send(uint8_t* data, uint16_t length) {
+    pthread_mutex_lock(&g_mutex_ab);
+    for (uint16_t i = 0; i < length; i++) {
+        uint16_t next_head = (g_shared_buffer_ab_head + 1) % SHARED_BUFFER_SIZE;
+        if (next_head != g_shared_buffer_ab_tail) {
+            g_shared_buffer_ab[g_shared_buffer_ab_head] = data[i];
+            g_shared_buffer_ab_head = next_head;
+        } else {
+            printf("Device B (bus 1): Buffer overflow\n");
+            break;
+        }
+    }
+    pthread_mutex_unlock(&g_mutex_ab);
     printf("Device B (bus 1) sent: ");
     print_hex(data, length, "");
-    
-    // 将数据发送到设备 A
-    if (g_device_a_data) {
-        pthread_mutex_lock(&g_device_a_data->tx_mutex);
-        memcpy(g_device_a_data->tx_buffer, data, length);
-        g_device_a_data->tx_length = length;
-        g_device_a_data->tx_bus_address = BUS_A_B_ADDRESS;
-        pthread_cond_signal(&g_device_a_data->tx_cond);
-        pthread_mutex_unlock(&g_device_a_data->tx_mutex);
-    }
 }
 
-// 设备 B 总线 2 发送函数（连接到设备 C）
+// 设备 B 总线 1 接收函数（从 A-B 共享缓冲区接收）
+uint16_t device_b_bus1_receive(uint8_t* buffer, uint16_t size) {
+    uint16_t count = 0;
+    pthread_mutex_lock(&g_mutex_ab);
+    while (g_shared_buffer_ab_tail != g_shared_buffer_ab_head && count < size) {
+        buffer[count++] = g_shared_buffer_ab[g_shared_buffer_ab_tail];
+        g_shared_buffer_ab_tail = (g_shared_buffer_ab_tail + 1) % SHARED_BUFFER_SIZE;
+    }
+    pthread_mutex_unlock(&g_mutex_ab);
+    if (count > 0) {
+        printf("Device B (bus 1) received %d bytes: ", count);
+        print_hex(buffer, count, "");
+    }
+    return count;
+}
+
+// 设备 B 总线 2 发送函数（发送到 B-C 共享缓冲区）
 void device_b_bus2_send(uint8_t* data, uint16_t length) {
+    pthread_mutex_lock(&g_mutex_bc);
+    for (uint16_t i = 0; i < length; i++) {
+        uint16_t next_head = (g_shared_buffer_bc_head + 1) % SHARED_BUFFER_SIZE;
+        if (next_head != g_shared_buffer_bc_tail) {
+            g_shared_buffer_bc[g_shared_buffer_bc_head] = data[i];
+            g_shared_buffer_bc_head = next_head;
+        } else {
+            printf("Device B (bus 2): Buffer overflow\n");
+            break;
+        }
+    }
+    pthread_mutex_unlock(&g_mutex_bc);
     printf("Device B (bus 2) sent: ");
     print_hex(data, length, "");
-    
-    // 将数据发送到设备 C
-    if (g_device_c_data) {
-        pthread_mutex_lock(&g_device_c_data->tx_mutex);
-        memcpy(g_device_c_data->tx_buffer, data, length);
-        g_device_c_data->tx_length = length;
-        g_device_c_data->tx_bus_address = BUS_B_C_ADDRESS;
-        pthread_cond_signal(&g_device_c_data->tx_cond);
-        pthread_mutex_unlock(&g_device_c_data->tx_mutex);
-    }
 }
 
-// 设备 C 总线发送函数
+// 设备 B 总线 2 接收函数（从 B-C 共享缓冲区接收）
+uint16_t device_b_bus2_receive(uint8_t* buffer, uint16_t size) {
+    uint16_t count = 0;
+    pthread_mutex_lock(&g_mutex_bc);
+    while (g_shared_buffer_bc_tail != g_shared_buffer_bc_head && count < size) {
+        buffer[count++] = g_shared_buffer_bc[g_shared_buffer_bc_tail];
+        g_shared_buffer_bc_tail = (g_shared_buffer_bc_tail + 1) % SHARED_BUFFER_SIZE;
+    }
+    pthread_mutex_unlock(&g_mutex_bc);
+    if (count > 0) {
+        printf("Device B (bus 2) received %d bytes: ", count);
+        print_hex(buffer, count, "");
+    }
+    return count;
+}
+
+// 设备 C 总线发送函数（发送到 B-C 共享缓冲区）
 void device_c_bus_send(uint8_t* data, uint16_t length) {
+    pthread_mutex_lock(&g_mutex_bc);
+    for (uint16_t i = 0; i < length; i++) {
+        uint16_t next_head = (g_shared_buffer_bc_head + 1) % SHARED_BUFFER_SIZE;
+        if (next_head != g_shared_buffer_bc_tail) {
+            g_shared_buffer_bc[g_shared_buffer_bc_head] = data[i];
+            g_shared_buffer_bc_head = next_head;
+        } else {
+            printf("Device C: Buffer overflow\n");
+            break;
+        }
+    }
+    pthread_mutex_unlock(&g_mutex_bc);
     printf("Device C sent: ");
     print_hex(data, length, "");
-    
-    // 将数据发送到设备 B
-    if (g_device_b_data) {
-        pthread_mutex_lock(&g_device_b_data->tx_mutex);
-        memcpy(g_device_b_data->tx_buffer, data, length);
-        g_device_b_data->tx_length = length;
-        g_device_b_data->tx_bus_address = BUS_B_C_ADDRESS;
-        pthread_cond_signal(&g_device_b_data->tx_cond);
-        pthread_mutex_unlock(&g_device_b_data->tx_mutex);
+}
+
+// 设备 C 总线接收函数（从 B-C 共享缓冲区接收）
+uint16_t device_c_bus_receive(uint8_t* buffer, uint16_t size) {
+    uint16_t count = 0;
+    pthread_mutex_lock(&g_mutex_bc);
+    while (g_shared_buffer_bc_tail != g_shared_buffer_bc_head && count < size) {
+        buffer[count++] = g_shared_buffer_bc[g_shared_buffer_bc_tail];
+        g_shared_buffer_bc_tail = (g_shared_buffer_bc_tail + 1) % SHARED_BUFFER_SIZE;
     }
+    pthread_mutex_unlock(&g_mutex_bc);
+    if (count > 0) {
+        printf("Device C received %d bytes: ", count);
+        print_hex(buffer, count, "");
+    }
+    return count;
 }
 
 // 加密函数
@@ -165,6 +254,10 @@ uint8_t get_key_for_bus(uint8_t bus_address) {
 void device_b_forward_post_func(uint8_t source_addr, uint8_t dest_addr, 
                               uint8_t* out_data, uint16_t out_length,
                               void* private_data) {
+    (void)source_addr;
+    (void)dest_addr;
+    (void)out_length;
+    (void)private_data;
     if (out_data) {
         free(out_data);
     }
@@ -176,6 +269,7 @@ eproto_error_t device_b_forward_callback(uint8_t source_addr, uint8_t dest_addr,
                                        uint8_t** out_data, uint16_t* out_length,
                                        eproto_forward_post_func_t* post_func,
                                        void** private_data) {
+    (void)private_data;
     printf("Device B: Forward callback called, source bus: 0x%02X, dest bus: 0x%02X, length: %d\n", source_addr, dest_addr, length);
     
     // 从 source_addr 解密数据
@@ -223,29 +317,63 @@ void mock_free(void* ptr) {
 
 // 信号等待函数
 eproto_signal_result_t mock_signal_wait(uint32_t timestamp) {
-    // 简单实现，直接返回超时
-    return EPROTO_SIGNAL_TIMEOUT;
+    if (!g_current_thread_data) {
+        return EPROTO_SIGNAL_TIMEOUT;
+    }
+
+    if (!g_current_thread_data->semaphore_initialized) {
+        if (sem_init(&g_current_thread_data->semaphore, 0, 0) != 0) {
+            printf("%s: Failed to initialize semaphore\n", g_current_thread_data->device_name);
+            return EPROTO_SIGNAL_TIMEOUT;
+        }
+        g_current_thread_data->semaphore_initialized = 1;
+    }
+
+    uint32_t current_time = mock_get_timestamp();
+    uint32_t timeout_ms = 0;
+    if (timestamp > current_time) {
+        timeout_ms = timestamp - current_time;
+    }
+
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    ts.tv_sec += timeout_ms / 1000;
+    ts.tv_nsec += (timeout_ms % 1000) * 1000000;
+    if (ts.tv_nsec >= 1000000000) {
+        ts.tv_sec++;
+        ts.tv_nsec -= 1000000000;
+    }
+
+    int result = sem_timedwait(&g_current_thread_data->semaphore, &ts);
+    if (result == 0) {
+        return EPROTO_SIGNAL_DATA;
+    } else {
+        return EPROTO_SIGNAL_TIMEOUT;
+    }
 }
 
 // 信号发送函数
 void mock_signal_send(void) {
-    // 空实现
+    if (g_current_thread_data && g_current_thread_data->semaphore_initialized) {
+        sem_post(&g_current_thread_data->semaphore);
+    }
 }
 
 // 锁函数
 void mock_lock(void) {
-    // 空实现
+    pthread_mutex_lock(&g_eproto_lock);
 }
 
 // 解锁函数
 void mock_unlock(void) {
-    // 空实现
+    pthread_mutex_unlock(&g_eproto_lock);
 }
 
 // 获取时间戳函数
 uint32_t mock_get_timestamp(void) {
-    // 简单实现，返回0
-    return 0;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
 }
 
 // 打印十六进制数据

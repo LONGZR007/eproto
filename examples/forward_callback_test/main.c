@@ -26,49 +26,80 @@
 
 int main() {
     printf("=== Forward Callback Test ===\n");
-    
+    printf("====================================\n\n");
+    fflush(stdout);
+
     // 创建设备数据结构
-    thread_data_t device_a_data = {
-        .device_address = DEVICE_A_ADDRESS,
-        .device_name = "Device A"
-    };
-    
-    thread_data_t device_b_data = {
-        .device_address = DEVICE_B_ADDRESS_1,
-        .device_name = "Device B"
-    };
-    
-    thread_data_t device_c_data = {
-        .device_address = DEVICE_C_ADDRESS,
-        .device_name = "Device C"
-    };
-    
+    thread_data_t* device_a_data = (thread_data_t*)malloc(sizeof(thread_data_t));
+    if (!device_a_data) {
+        printf("Failed to allocate memory for device A data\n");
+        return 1;
+    }
+    memset(device_a_data, 0, sizeof(thread_data_t));
+    device_a_data->device_address = DEVICE_A_ADDRESS;
+    device_a_data->device_name = "Device A";
+
+    thread_data_t* device_b_data = (thread_data_t*)malloc(sizeof(thread_data_t));
+    if (!device_b_data) {
+        printf("Failed to allocate memory for device B data\n");
+        free(device_a_data);
+        return 1;
+    }
+    memset(device_b_data, 0, sizeof(thread_data_t));
+    device_b_data->device_address = DEVICE_B_ADDRESS_1;
+    device_b_data->device_name = "Device B";
+
+    thread_data_t* device_c_data = (thread_data_t*)malloc(sizeof(thread_data_t));
+    if (!device_c_data) {
+        printf("Failed to allocate memory for device C data\n");
+        free(device_a_data);
+        free(device_b_data);
+        return 1;
+    }
+    memset(device_c_data, 0, sizeof(thread_data_t));
+    device_c_data->device_address = DEVICE_C_ADDRESS;
+    device_c_data->device_name = "Device C";
+
     // 创建线程
     pthread_t device_a_thread_id, device_b_thread_id, device_c_thread_id;
-    
+
     // 启动设备 C 线程
-    if (pthread_create(&device_c_thread_id, NULL, device_c_thread, &device_c_data) != 0) {
+    if (pthread_create(&device_c_thread_id, NULL, device_c_thread, device_c_data) != 0) {
         printf("Failed to create device C thread\n");
+        free(device_a_data);
+        free(device_b_data);
+        free(device_c_data);
         return 1;
     }
-    
+
     // 启动设备 B 线程
-    if (pthread_create(&device_b_thread_id, NULL, device_b_thread, &device_b_data) != 0) {
+    if (pthread_create(&device_b_thread_id, NULL, device_b_thread, device_b_data) != 0) {
         printf("Failed to create device B thread\n");
+        free(device_a_data);
+        free(device_b_data);
+        free(device_c_data);
         return 1;
     }
-    
+
     // 启动设备 A 线程
-    if (pthread_create(&device_a_thread_id, NULL, device_a_thread, &device_a_data) != 0) {
+    if (pthread_create(&device_a_thread_id, NULL, device_a_thread, device_a_data) != 0) {
         printf("Failed to create device A thread\n");
+        free(device_a_data);
+        free(device_b_data);
+        free(device_c_data);
         return 1;
     }
-    
-    // 等待一段时间让测试完成
-    sleep(5);
-    
-    // 强制结束线程（在实际测试中，应该使用更优雅的退出机制）
-    printf("=== Test completed ===\n");
-    
+
+    // 等待所有线程完成
+    pthread_join(device_a_thread_id, NULL);
+    pthread_join(device_b_thread_id, NULL);
+    pthread_join(device_c_thread_id, NULL);
+
+    // 清理内存
+    free(device_a_data);
+    free(device_b_data);
+    free(device_c_data);
+
+    printf("\n=== Test completed\n");
     return 0;
 }

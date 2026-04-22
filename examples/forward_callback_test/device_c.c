@@ -24,45 +24,51 @@
 
 #include "common.h"
 
-// 接收线程函数
+// 设备 C 接收线程
 void* device_c_receive_thread(void* arg) {
     thread_data_t* data = (thread_data_t*)arg;
-    
-    while (1) {
-        pthread_mutex_lock(&data->tx_mutex);
-        pthread_cond_wait(&data->tx_cond, &data->tx_mutex);
-        
-        // 处理接收到的数据
-        eproto_receive_data(&data->eproto_inst, data->tx_bus_address, data->tx_buffer, data->tx_length);
-        
-        pthread_mutex_unlock(&data->tx_mutex);
+    printf("%s receive thread started\n", data->device_name);
+    fflush(stdout);
+
+    g_current_thread_data = data;
+
+    for (int i = 0; i < 100; i++) {
+        uint8_t rx_buffer[256];
+        uint16_t rx_count = device_c_bus_receive(rx_buffer, sizeof(rx_buffer));
+        if (rx_count > 0) {
+            eproto_receive_data(&data->eproto_inst, BUS_B_C_ADDRESS, rx_buffer, rx_count);
+        }
+        usleep(50000);
     }
-    
-    return NULL;
+
+    printf("%s receive thread finished\n", data->device_name);
+    fflush(stdout);
+    pthread_exit(NULL);
 }
 
-// 处理线程函数
+// 设备 C 处理线程
 void* device_c_process_thread(void* arg) {
     thread_data_t* data = (thread_data_t*)arg;
-    
-    while (1) {
+    printf("%s process thread started\n", data->device_name);
+    fflush(stdout);
+
+    g_current_thread_data = data;
+
+    for (int i = 0; i < 100; i++) {
         eproto_process(&data->eproto_inst);
-        usleep(1000); // 睡眠1ms
+        usleep(50000);
     }
-    
-    return NULL;
+
+    printf("%s process thread finished\n", data->device_name);
+    fflush(stdout);
+    pthread_exit(NULL);
 }
 
-// 设备 C 线程函数
 void* device_c_thread(void* arg) {
     thread_data_t* data = (thread_data_t*)arg;
-    printf("Device C thread started\n");
-    
-    // 初始化互斥锁和条件变量
-    pthread_mutex_init(&data->tx_mutex, NULL);
-    pthread_cond_init(&data->tx_cond, NULL);
-    
-    // 初始化用户函数
+    printf("%s thread started\n", data->device_name);
+    fflush(stdout);
+
     eproto_user_functions_t user_functions = {
         .malloc = mock_malloc,
         .free = mock_free,
@@ -73,62 +79,67 @@ void* device_c_thread(void* arg) {
         .get_timestamp = mock_get_timestamp,
         .timeout_timestamp = 0
     };
-    
-    // 初始化 eProto 实例
+
     eproto_error_t error = eproto_init(&data->eproto_inst, &user_functions);
     if (error != EPROTO_OK) {
-        printf("Device C: Failed to initialize eProto\n");
-        return NULL;
+        printf("%s: Failed to initialize eProto\n", data->device_name);
+        fflush(stdout);
+        pthread_exit(NULL);
     }
-    printf("Device C: eProto initialized successfully\n");
-    
-    // 设置全局指针
+    printf("%s: eProto initialized successfully\n", data->device_name);
+    fflush(stdout);
     g_device_c_data = data;
-    
-    // 添加总线
+
     error = eproto_add_bus(&data->eproto_inst, BUS_B_C_ADDRESS, device_c_bus_send, data->rx_buffer, sizeof(data->rx_buffer),
                           "device_c_bus", mock_status_callback, device_c_receive_callback, NULL);
     if (error != EPROTO_OK) {
-        printf("Device C: Failed to add bus\n");
-        return NULL;
+        printf("%s: Failed to add bus\n", data->device_name);
+        fflush(stdout);
+        pthread_exit(NULL);
     }
-    printf("Device C: Bus added successfully\n");
-    
-    // 添加目标设备（Device A）
-    error = eproto_add_destination_device(&data->eproto_inst, BUS_B_C_ADDRESS, DEVICE_A_ADDRESS);
-    if (error != EPROTO_OK) {
-        printf("Device C: Failed to add destination device 0x%02X\n", DEVICE_A_ADDRESS);
-        return NULL;
-    }
-    printf("Device C: Destination device 0x%02X added successfully\n", DEVICE_A_ADDRESS);
-    
-    // 添加目标设备（Device B）
+    printf("%s: Bus added successfully\n", data->device_name);
+    fflush(stdout);
+
+    // 添加目标设备（Device B3 和 A1）
     error = eproto_add_destination_device(&data->eproto_inst, BUS_B_C_ADDRESS, DEVICE_B_ADDRESS_2);
     if (error != EPROTO_OK) {
-        printf("Device C: Failed to add destination device 0x%02X\n", DEVICE_B_ADDRESS_2);
-        return NULL;
+        printf("%s: Failed to add destination device B3\n", data->device_name);
+        fflush(stdout);
+        pthread_exit(NULL);
     }
-    printf("Device C: Destination device 0x%02X added successfully\n", DEVICE_B_ADDRESS_2);
+    printf("%s: Destination device B3 (0x%02X) added successfully\n", data->device_name, DEVICE_B_ADDRESS_2);
+    fflush(stdout);
     
-    // 创建接收线程和处理线程
+    error = eproto_add_destination_device(&data->eproto_inst, BUS_B_C_ADDRESS, DEVICE_A_ADDRESS);
+    if (error != EPROTO_OK) {
+        printf("%s: Failed to add destination device A1\n", data->device_name);
+        fflush(stdout);
+        pthread_exit(NULL);
+    }
+    printf("%s: Destination device A1 (0x%02X) added successfully\n", data->device_name, DEVICE_A_ADDRESS);
+    fflush(stdout);
+
     pthread_t receive_thread, process_thread;
-    
+
+    data->thread_type = THREAD_TYPE_RECEIVE;
+
     if (pthread_create(&receive_thread, NULL, device_c_receive_thread, data) != 0) {
-        printf("Device C: Failed to create receive thread\n");
-        return NULL;
+        printf("%s: Failed to create receive thread\n", data->device_name);
+        pthread_exit(NULL);
     }
-    
+
+    data->thread_type = THREAD_TYPE_PROCESS;
+
     if (pthread_create(&process_thread, NULL, device_c_process_thread, data) != 0) {
-        printf("Device C: Failed to create process thread\n");
-        return NULL;
+        printf("%s: Failed to create process thread\n", data->device_name);
+        pthread_exit(NULL);
     }
-    
-    // 等待测试完成
-    sleep(5);
-    
-    // 等待线程结束
+
     pthread_join(receive_thread, NULL);
     pthread_join(process_thread, NULL);
-    
-    return NULL;
+
+    eproto_destroy(&data->eproto_inst);
+
+    printf("%s thread finished\n", data->device_name);
+    pthread_exit(NULL);
 }
