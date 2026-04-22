@@ -38,6 +38,8 @@ void* device_b_receive_thread(void* arg) {
         uint16_t rx_count1 = device_b_bus1_receive(rx_buffer1, sizeof(rx_buffer1));
         if (rx_count1 > 0) {
             eproto_receive_data(&data->eproto_inst, BUS_A_B_ADDRESS, rx_buffer1, rx_count1);
+            // 手动调用 eproto_process 来处理接收到的数据
+            eproto_process(&data->eproto_inst);
         }
         
         // 接收总线 2 (B-C) 的数据
@@ -45,6 +47,8 @@ void* device_b_receive_thread(void* arg) {
         uint16_t rx_count2 = device_b_bus2_receive(rx_buffer2, sizeof(rx_buffer2));
         if (rx_count2 > 0) {
             eproto_receive_data(&data->eproto_inst, BUS_B_C_ADDRESS, rx_buffer2, rx_count2);
+            // 手动调用 eproto_process 来处理接收到的数据
+            eproto_process(&data->eproto_inst);
         }
         
         usleep(50000);
@@ -129,6 +133,16 @@ void* device_b_thread(void* arg) {
         pthread_exit(NULL);
     }
     printf("%s: Destination device A1 (0x%02X) added successfully\n", data->device_name, DEVICE_A_ADDRESS);
+    fflush(stdout);
+    
+    // 添加目标设备（Device B2）到总线 1，以便能够发送握手应答包给设备 A
+    error = eproto_add_destination_device(&data->eproto_inst, BUS_A_B_ADDRESS, DEVICE_B_ADDRESS_1);
+    if (error != EPROTO_OK) {
+        printf("%s: Failed to add destination device B2\n", data->device_name);
+        fflush(stdout);
+        pthread_exit(NULL);
+    }
+    printf("%s: Destination device B2 (0x%02X) added successfully\n", data->device_name, DEVICE_B_ADDRESS_1);
     fflush(stdout);
     
     // 添加目标设备（Device C4）到总线 2
