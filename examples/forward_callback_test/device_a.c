@@ -87,22 +87,39 @@ void* device_a_thread(void* arg) {
     // 设置全局指针
     g_device_a_data = data;
     
-    // 添加总线
+    // 添加第一条总线（连接到 Device B）
     error = eproto_add_bus(&data->eproto_inst, BUS_A_B_ADDRESS, device_a_bus_send, data->rx_buffer, sizeof(data->rx_buffer),
-                          "device_a_bus", mock_status_callback, device_a_receive_callback, NULL);
+                          "device_a_bus1", mock_status_callback, device_a_receive_callback, NULL);
     if (error != EPROTO_OK) {
-        printf("Device A: Failed to add bus\n");
+        printf("Device A: Failed to add bus 1\n");
         return NULL;
     }
-    printf("Device A: Bus added successfully\n");
+    printf("Device A: Bus 1 added successfully\n");
     
-    // 添加目标设备（Device C）
+    // 添加第二条总线（也连接到 Device B，作为备用）
+    error = eproto_add_bus(&data->eproto_inst, BUS_A_B_ADDRESS + 1, device_a_bus_send, data->rx_buffer, sizeof(data->rx_buffer),
+                          "device_a_bus2", mock_status_callback, device_a_receive_callback, NULL);
+    if (error != EPROTO_OK) {
+        printf("Device A: Failed to add bus 2\n");
+        return NULL;
+    }
+    printf("Device A: Bus 2 added successfully\n");
+    
+    // 添加目标设备（Device C）到第一条总线
     error = eproto_add_destination_device(&data->eproto_inst, BUS_A_B_ADDRESS, DEVICE_C_ADDRESS);
     if (error != EPROTO_OK) {
-        printf("Device A: Failed to add destination device\n");
+        printf("Device A: Failed to add destination device to bus 1\n");
         return NULL;
     }
-    printf("Device A: Destination device 0x%02X added successfully\n", DEVICE_C_ADDRESS);
+    printf("Device A: Destination device 0x%02X added successfully to bus 1\n", DEVICE_C_ADDRESS);
+    
+    // 添加目标设备（Device C）到第二条总线
+    error = eproto_add_destination_device(&data->eproto_inst, BUS_A_B_ADDRESS + 1, DEVICE_C_ADDRESS);
+    if (error != EPROTO_OK) {
+        printf("Device A: Failed to add destination device to bus 2\n");
+        return NULL;
+    }
+    printf("Device A: Destination device 0x%02X added successfully to bus 2\n", DEVICE_C_ADDRESS);
     
     // 创建接收线程和处理线程
     pthread_t receive_thread, process_thread;
