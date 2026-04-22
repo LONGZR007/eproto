@@ -1,6 +1,6 @@
 # 编译选项
 CC = gcc
-CFLAGS = -I../../inc -Wall -Wextra -std=c99
+CFLAGS = -I../../inc -I. -Wall -Wextra -std=c99
 LDFLAGS = -lpthread
 
 # 目标文件
