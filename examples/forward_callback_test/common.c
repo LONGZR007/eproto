@@ -253,9 +253,11 @@ uint8_t* decrypt_data(uint8_t* data, uint16_t length, uint8_t key) {
 // 密钥获取函数
 uint8_t get_key_for_bus(uint8_t bus_address) {
     switch (bus_address) {
-        case BUS_A_B_ADDRESS:
+        case DEVICE_A_ADDRESS:
+        case DEVICE_B_ADDRESS_1:
             return KEY_BUS_A_B;
-        case BUS_B_C_ADDRESS:
+        case DEVICE_B_ADDRESS_2:
+        case DEVICE_C_ADDRESS:
             return KEY_BUS_B_C;
         default:
             return 0;

@@ -37,7 +37,7 @@ void* device_b_receive_thread(void* arg) {
         uint8_t rx_buffer1[256];
         uint16_t rx_count1 = device_b_bus1_receive(rx_buffer1, sizeof(rx_buffer1));
         if (rx_count1 > 0) {
-            eproto_receive_data(&data->eproto_inst, BUS_A_B_ADDRESS, rx_buffer1, rx_count1);
+            eproto_receive_data(&data->eproto_inst, DEVICE_B_ADDRESS_1, rx_buffer1, rx_count1);
             // 手动调用 eproto_process 来处理接收到的数据
             eproto_process(&data->eproto_inst);
         }
@@ -46,7 +46,7 @@ void* device_b_receive_thread(void* arg) {
         uint8_t rx_buffer2[256];
         uint16_t rx_count2 = device_b_bus2_receive(rx_buffer2, sizeof(rx_buffer2));
         if (rx_count2 > 0) {
-            eproto_receive_data(&data->eproto_inst, BUS_B_C_ADDRESS, rx_buffer2, rx_count2);
+            eproto_receive_data(&data->eproto_inst, DEVICE_B_ADDRESS_2, rx_buffer2, rx_count2);
             // 手动调用 eproto_process 来处理接收到的数据
             eproto_process(&data->eproto_inst);
         }
@@ -104,29 +104,29 @@ void* device_b_thread(void* arg) {
     g_device_b_data = data;
 
     // 添加第一条总线（连接到 Device A）
-    error = eproto_add_bus(&data->eproto_inst, BUS_A_B_ADDRESS, device_b_bus1_send, data->rx_buffer, sizeof(data->rx_buffer),
+    error = eproto_add_bus(&data->eproto_inst, DEVICE_B_ADDRESS_1, device_b_bus1_send, data->rx_buffer, sizeof(data->rx_buffer),
                           "device_b_bus1", mock_status_callback, device_b_receive_callback, device_b_forward_callback);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add bus 1\n", data->device_name);
         fflush(stdout);
         pthread_exit(NULL);
     }
-    printf("%s: Bus 1 (0x%02X) added successfully\n", data->device_name, BUS_A_B_ADDRESS);
+    printf("%s: Bus 1 (0x%02X) added successfully\n", data->device_name, DEVICE_B_ADDRESS_1);
     fflush(stdout);
 
     // 添加第二条总线（连接到 Device C）
-    error = eproto_add_bus(&data->eproto_inst, BUS_B_C_ADDRESS, device_b_bus2_send, data->rx_buffer2, sizeof(data->rx_buffer2),
+    error = eproto_add_bus(&data->eproto_inst, DEVICE_B_ADDRESS_2, device_b_bus2_send, data->rx_buffer2, sizeof(data->rx_buffer2),
                           "device_b_bus2", mock_status_callback, device_b_receive_callback, device_b_forward_callback);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add bus 2\n", data->device_name);
         fflush(stdout);
         pthread_exit(NULL);
     }
-    printf("%s: Bus 2 (0x%02X) added successfully\n", data->device_name, BUS_B_C_ADDRESS);
+    printf("%s: Bus 2 (0x%02X) added successfully\n", data->device_name, DEVICE_B_ADDRESS_2);
     fflush(stdout);
 
     // 添加目标设备（Device A1）到总线 1
-    error = eproto_add_destination_device(&data->eproto_inst, BUS_A_B_ADDRESS, DEVICE_A_ADDRESS);
+    error = eproto_add_destination_device(&data->eproto_inst, DEVICE_B_ADDRESS_1, DEVICE_A_ADDRESS);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add destination device A1\n", data->device_name);
         fflush(stdout);
@@ -136,7 +136,7 @@ void* device_b_thread(void* arg) {
     fflush(stdout);
     
     // 添加目标设备（Device B2）到总线 1，以便能够发送握手应答包给设备 A
-    error = eproto_add_destination_device(&data->eproto_inst, BUS_A_B_ADDRESS, DEVICE_B_ADDRESS_1);
+    error = eproto_add_destination_device(&data->eproto_inst, DEVICE_B_ADDRESS_1, DEVICE_B_ADDRESS_1);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add destination device B2\n", data->device_name);
         fflush(stdout);
@@ -146,7 +146,7 @@ void* device_b_thread(void* arg) {
     fflush(stdout);
     
     // 添加目标设备（Device C4）到总线 2
-    error = eproto_add_destination_device(&data->eproto_inst, BUS_B_C_ADDRESS, DEVICE_C_ADDRESS);
+    error = eproto_add_destination_device(&data->eproto_inst, DEVICE_B_ADDRESS_2, DEVICE_C_ADDRESS);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add destination device C4\n", data->device_name);
         fflush(stdout);

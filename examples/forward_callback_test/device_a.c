@@ -36,7 +36,7 @@ void* device_a_receive_thread(void* arg) {
         uint8_t rx_buffer[256];
         uint16_t rx_count = device_a_bus_receive(rx_buffer, sizeof(rx_buffer));
         if (rx_count > 0) {
-            eproto_receive_data(&data->eproto_inst, BUS_A_B_ADDRESS, rx_buffer, rx_count);
+            eproto_receive_data(&data->eproto_inst, DEVICE_A_ADDRESS, rx_buffer, rx_count);
         }
         usleep(50000);
     }
@@ -121,7 +121,7 @@ void* device_a_thread(void* arg) {
     fflush(stdout);
     g_device_a_data = data;
 
-    error = eproto_add_bus(&data->eproto_inst, BUS_A_B_ADDRESS, device_a_bus_send, data->rx_buffer, sizeof(data->rx_buffer),
+    error = eproto_add_bus(&data->eproto_inst, DEVICE_A_ADDRESS, device_a_bus_send, data->rx_buffer, sizeof(data->rx_buffer),
                           "device_a_bus", mock_status_callback, device_a_receive_callback, NULL);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add bus\n", data->device_name);
@@ -132,7 +132,7 @@ void* device_a_thread(void* arg) {
     fflush(stdout);
 
     // 添加目标设备（Device B2 和 C4）
-    error = eproto_add_destination_device(&data->eproto_inst, BUS_A_B_ADDRESS, DEVICE_B_ADDRESS_1);
+    error = eproto_add_destination_device(&data->eproto_inst, DEVICE_A_ADDRESS, DEVICE_B_ADDRESS_1);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add destination device B2\n", data->device_name);
         fflush(stdout);
@@ -141,7 +141,7 @@ void* device_a_thread(void* arg) {
     printf("%s: Destination device B2 (0x%02X) added successfully\n", data->device_name, DEVICE_B_ADDRESS_1);
     fflush(stdout);
     
-    error = eproto_add_destination_device(&data->eproto_inst, BUS_A_B_ADDRESS, DEVICE_C_ADDRESS);
+    error = eproto_add_destination_device(&data->eproto_inst, DEVICE_A_ADDRESS, DEVICE_C_ADDRESS);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add destination device C4\n", data->device_name);
         fflush(stdout);
