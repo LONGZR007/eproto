@@ -334,6 +334,11 @@ eproto_signal_result_t mock_signal_wait(uint32_t timestamp) {
     if (timestamp > current_time) {
         timeout_ms = timestamp - current_time;
     }
+    
+    // 限制最大超时时间为 100ms，避免长时间阻塞
+    if (timeout_ms > 100) {
+        timeout_ms = 100;
+    }
 
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
