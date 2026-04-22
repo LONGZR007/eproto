@@ -35,12 +35,13 @@
 
 // 设备地址定义
 #define DEVICE_A_ADDRESS 0x01
-#define DEVICE_B_ADDRESS 0x02
-#define DEVICE_C_ADDRESS 0x03
+#define DEVICE_B_ADDRESS_1 0x02
+#define DEVICE_B_ADDRESS_2 0x03
+#define DEVICE_C_ADDRESS 0x04
 
 // 总线地址定义
-#define BUS_A_B_ADDRESS 0x01  // Device A 和 Device B 之间的总线
-#define BUS_B_C_ADDRESS 0x02  // Device B 和 Device C 之间的总线
+#define BUS_A_B_ADDRESS 0x02  // Device A 和 Device B 之间的总线
+#define BUS_B_C_ADDRESS 0x03  // Device B 和 Device C 之间的总线
 
 // 加密密钥定义
 #define KEY_BUS_A_B 0x55  // 总线 A-B 的密钥

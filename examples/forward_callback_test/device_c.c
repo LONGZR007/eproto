@@ -103,12 +103,12 @@ void* device_c_thread(void* arg) {
     printf("Device C: Destination device 0x%02X added successfully\n", DEVICE_A_ADDRESS);
     
     // 添加目标设备（Device B）
-    error = eproto_add_destination_device(&data->eproto_inst, BUS_B_C_ADDRESS, DEVICE_B_ADDRESS);
+    error = eproto_add_destination_device(&data->eproto_inst, BUS_B_C_ADDRESS, DEVICE_B_ADDRESS_2);
     if (error != EPROTO_OK) {
-        printf("Device C: Failed to add destination device 0x%02X\n", DEVICE_B_ADDRESS);
+        printf("Device C: Failed to add destination device 0x%02X\n", DEVICE_B_ADDRESS_2);
         return NULL;
     }
-    printf("Device C: Destination device 0x%02X added successfully\n", DEVICE_B_ADDRESS);
+    printf("Device C: Destination device 0x%02X added successfully\n", DEVICE_B_ADDRESS_2);
     
     // 创建接收线程和处理线程
     pthread_t receive_thread, process_thread;

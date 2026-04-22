@@ -34,7 +34,7 @@ int main() {
     };
     
     thread_data_t device_b_data = {
-        .device_address = DEVICE_B_ADDRESS,
+        .device_address = DEVICE_B_ADDRESS_1,
         .device_name = "Device B"
     };
     

@@ -38,7 +38,7 @@
 #define EPROTO_DEFAULT_RETRY_TIMEOUT_MS 100  // 默认超时时间
 
 // 握手配置
-#define EPROTO_ENABLE_HANDSHAKE 1           // 启用握手功能（1=启用，0=禁用）
+#define EPROTO_ENABLE_HANDSHAKE 0           // 启用握手功能（1=启用，0=禁用）
 #define EPROTO_HANDSHAKE_MAX_RETRY_COUNT 3  // 握手最大重发次数
 #define EPROTO_HANDSHAKE_TIMEOUT_MS 1000    // 握手超时时间（毫秒）
 
