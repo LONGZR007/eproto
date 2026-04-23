@@ -59,10 +59,6 @@ typedef enum {
     EPROTO_STATUS_HANDSHAKE_SUCCESS     // 握手成功
 } eproto_status_t;
 
-// 回调函数类型定义
-typedef void (*eproto_status_callback_t)(eproto_status_t status, uint8_t* data, uint16_t length);
-typedef void (*receive_callback_t)(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
-
 // 错误码定义
 typedef enum {
     EPROTO_OK = 0,
@@ -76,20 +72,27 @@ typedef enum {
     EPROTO_ERROR_WAKEUP_FAILED
 } eproto_error_t;
 
+// 前向声明总线接口结构体
+typedef struct eproto_bus_t eproto_bus_t;
+
+// 回调函数类型定义
+typedef void (*eproto_status_callback_t)(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length);
+typedef void (*receive_callback_t)(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
+
 // 转发后处理回调函数类型
-typedef void (*eproto_forward_post_func_t)(uint8_t source_addr, uint8_t dest_addr, 
+typedef void (*eproto_forward_post_func_t)(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr, 
                                          uint8_t* out_data, uint16_t out_length,
                                          void* private_data);
 
 // 转发回调函数类型
-typedef eproto_error_t (*eproto_forward_callback_t)(uint8_t source_addr, uint8_t dest_addr, 
+typedef eproto_error_t (*eproto_forward_callback_t)(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr, 
                                                    uint8_t* data, uint16_t length, 
                                                    uint8_t** out_data, uint16_t* out_length,
                                                    eproto_forward_post_func_t* post_func,
                                                    void** private_data);
 
 // 总线接口
-typedef struct {
+typedef struct eproto_bus_t {
     uint8_t self_addr;                // 总线的自身地址
     eproto_bus_send_func_t send;      // 发送函数
     uint8_t* rx_buffer;               // 接收缓冲区

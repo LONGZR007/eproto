@@ -592,7 +592,7 @@ static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager
 
         // 调用状态回调告诉用户握手成功
         if (bus_mgr->status_callback) {
-            bus_mgr->status_callback(EPROTO_STATUS_HANDSHAKE_SUCCESS, NULL, 0);
+            bus_mgr->status_callback(&bus_mgr->bus, EPROTO_STATUS_HANDSHAKE_SUCCESS, NULL, 0);
         }
 
         // 握手改为不需要回复包，直接返回
@@ -623,7 +623,7 @@ static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager
     // 调用接收回调函数
     if (bus_mgr->receive_callback) {
         EPROTO_DEBUG_LOG("%s: Calling receive callback\n", EPROTO_BUS_NAME(bus_mgr));
-        bus_mgr->receive_callback(frame->src_addr, frame->packet_id, frame->data, frame->length);
+        bus_mgr->receive_callback(&bus_mgr->bus, frame->src_addr, frame->packet_id, frame->data, frame->length);
         // 更新上次处理的包ID
         bus_mgr->last_id = frame->packet_id;
     }
@@ -650,7 +650,7 @@ static void eproto_process_protocol_ack_packet(eproto_t* eproto, eproto_bus_mana
             }
             // 调用状态回调告诉用户握手成功
             if (bus_mgr->status_callback) {
-                bus_mgr->status_callback(EPROTO_STATUS_HANDSHAKE_SUCCESS, NULL, 0);
+                bus_mgr->status_callback(&bus_mgr->bus, EPROTO_STATUS_HANDSHAKE_SUCCESS, NULL, 0);
             }
             // 销毁握手节点
             eproto_packet_node_destroy(eproto->user_functions.free, node);
@@ -713,13 +713,13 @@ static void eproto_process_parse_error(eproto_bus_manager_t* bus_mgr, eproto_fra
         if (bus_mgr->crc_error_count >= 3) {
             // 多次连续CRC错误，通知用户
             if (bus_mgr->status_callback) {
-                bus_mgr->status_callback(EPROTO_STATUS_MULTIPLE_CRC_ERRORS, NULL, 0);
+                bus_mgr->status_callback(&bus_mgr->bus, EPROTO_STATUS_MULTIPLE_CRC_ERRORS, NULL, 0);
             }
             bus_mgr->crc_error_count = 0;
         } else {
             // 通知用户CRC错误
             if (bus_mgr->status_callback) {
-                bus_mgr->status_callback(EPROTO_STATUS_CRC_ERROR, NULL, 0);
+                bus_mgr->status_callback(&bus_mgr->bus, EPROTO_STATUS_CRC_ERROR, NULL, 0);
             }
         }
     } else if (error == EPROTO_FRAME_PARSER_ERROR_INVALID_LENGTH) {
@@ -951,7 +951,7 @@ static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t*
     // 调用用户的状态回调通知正在握手
     if (bus_mgr->status_callback) {
         EPROTO_INFO_LOG("%s: Calling status callback for handshake in progress\n", EPROTO_BUS_NAME(bus_mgr));
-        bus_mgr->status_callback(EPROTO_STATUS_HANDSHAKE_IN_PROGRESS, NULL, 0);
+        bus_mgr->status_callback(&bus_mgr->bus, EPROTO_STATUS_HANDSHAKE_IN_PROGRESS, NULL, 0);
     }
 
     // 生成握手包的包ID
@@ -1070,6 +1070,7 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
             
             if (bus_mgr->forward_callback) {
                 eproto_error_t error = bus_mgr->forward_callback(
+                    &bus_mgr->bus,
                     current_bus_mgr->bus.self_addr, bus_mgr->bus.self_addr,
                     frame->data, frame->length,
                     &temp_data, &forward_length,
@@ -1113,6 +1114,7 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
             // 调用后处理回调
             if (post_func) {
                 post_func(
+                    &bus_mgr->bus,
                     frame->src_addr, frame->dst_addr,
                     forward_data, forward_length,
                     private_data
@@ -1121,11 +1123,11 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
         }
 
         // 调用当前总线的接收回调函数，通知用户收到了广播包
-        if (current_bus_mgr->receive_callback) {
-            EPROTO_DEBUG_LOG("%s: Calling receive callback for broadcast\n", EPROTO_BUS_NAME(current_bus_mgr));
-            current_bus_mgr->receive_callback(frame->src_addr, frame->packet_id, frame->data, frame->length);
-            // 广播包不更新last_id，避免影响重发检测
-        }
+    if (current_bus_mgr->receive_callback) {
+        EPROTO_DEBUG_LOG("%s: Calling receive callback for broadcast\n", EPROTO_BUS_NAME(current_bus_mgr));
+        current_bus_mgr->receive_callback(&current_bus_mgr->bus, frame->src_addr, frame->packet_id, frame->data, frame->length);
+        // 广播包不更新last_id，避免影响重发检测
+    }
 
         return;
     }
@@ -1145,6 +1147,7 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
         
         if (destination_bus_mgr->forward_callback) {
                 eproto_error_t error = destination_bus_mgr->forward_callback(
+                    &destination_bus_mgr->bus,
                     current_bus_mgr->bus.self_addr, destination_bus_mgr->bus.self_addr,
                     frame->data, frame->length,
                     &temp_data, &forward_length,
@@ -1184,13 +1187,14 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
         }
         
         // 调用后处理回调
-        if (post_func) {
-            post_func(
-                frame->src_addr, frame->dst_addr,
-                forward_data, forward_length,
-                private_data
-            );
-        }
+    if (post_func) {
+        post_func(
+            &destination_bus_mgr->bus,
+            frame->src_addr, frame->dst_addr,
+            forward_data, forward_length,
+            private_data
+        );
+    }
     } else {
         EPROTO_WARNING_LOG("%s: No route found for %02X, dropping packet\n", EPROTO_BUS_NAME(current_bus_mgr),
                            frame->dst_addr);
