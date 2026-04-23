@@ -130,7 +130,6 @@ typedef struct {
 // 总线管理结构体
 typedef struct {
     eproto_bus_t bus;                // 总线接口（实体）
-    const char* name;                // 总线名称，用于日志和调试
     eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
 
     // 帧解析器
