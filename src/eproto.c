@@ -173,18 +173,15 @@ static eproto_bus_manager_t* eproto_find_bus_by_destination(eproto_t* eproto, ui
 }
 
 // 添加总线
-eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_send_func_t send_func, uint8_t* rx_buffer,
-                              uint16_t rx_buffer_size, const char* name,
-                              eproto_status_callback_t status_callback, receive_callback_t receive_callback,
-                              eproto_forward_callback_t forward_callback) {
-    if (!eproto || !send_func || !rx_buffer || rx_buffer_size == 0)
+eproto_error_t eproto_add_bus(eproto_t* eproto, eproto_bus_config_t* bus_config) {
+    if (!eproto || !bus_config || !bus_config->send || !bus_config->rx_buffer || bus_config->rx_buffer_size == 0)
         return EPROTO_ERROR_INVALID_FRAME;
 
     // 查找空闲的总线管理器
     uint8_t manager_index = 0;
     for (; manager_index < EPROTO_MAX_BUS_COUNT; manager_index++) {
         if (!eproto->bus_managers[manager_index].bus.send ||
-            (eproto->bus_managers[manager_index].bus.self_addr == self_addr)) {
+            (eproto->bus_managers[manager_index].bus.self_addr == bus_config->self_addr)) {
             break;
         }
     }
@@ -193,19 +190,19 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_se
         return EPROTO_ERROR_ROUTE_NOT_FOUND;
 
     // 初始化或更新总线管理器
-    eproto->bus_managers[manager_index].bus.send = send_func;
-    eproto->bus_managers[manager_index].bus.self_addr = self_addr;
-    eproto->bus_managers[manager_index].name = name;
+    eproto->bus_managers[manager_index].bus.send = bus_config->send;
+    eproto->bus_managers[manager_index].bus.self_addr = bus_config->self_addr;
+    eproto->bus_managers[manager_index].name = bus_config->name;
 
     // 设置接口函数
-    eproto->bus_managers[manager_index].status_callback = status_callback;
-    eproto->bus_managers[manager_index].receive_callback = receive_callback;
-    eproto->bus_managers[manager_index].forward_callback = forward_callback;  // 新增：设置转发回调
+    eproto->bus_managers[manager_index].status_callback = bus_config->status_callback;
+    eproto->bus_managers[manager_index].receive_callback = bus_config->receive_callback;
+    eproto->bus_managers[manager_index].forward_callback = bus_config->forward_callback;  // 新增：设置转发回调
     // 初始化目标设备地址数组
     eproto->bus_managers[manager_index].destination_device_count = 0;
 
     // 初始化接收缓冲区（必须由用户提供）
-    eproto_ring_buffer_init(&eproto->bus_managers[manager_index].rx_buffer, rx_buffer, rx_buffer_size);
+    eproto_ring_buffer_init(&eproto->bus_managers[manager_index].rx_buffer, bus_config->rx_buffer, bus_config->rx_buffer_size);
 
     // 初始化帧解析器
     eproto_frame_parser_config_t parser_config;
@@ -221,7 +218,7 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_se
 #ifdef EPROTO_ENABLE_HANDSHAKE
     // 初始化总线需要握手
     eproto->bus_managers[manager_index].handshake_required = 1;
-    EPROTO_INFO_LOG("%s: Bus initialized with handshake required\n", name);
+    EPROTO_INFO_LOG("%s: Bus initialized with handshake required\n", bus_config->name);
 #endif
 
     return EPROTO_OK;
