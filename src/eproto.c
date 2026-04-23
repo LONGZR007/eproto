@@ -191,6 +191,7 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, eproto_bus_t* bus) {
     // 初始化或更新总线管理器
     eproto->bus_managers[manager_index].bus.send = bus->send;
     eproto->bus_managers[manager_index].bus.self_addr = bus->self_addr;
+    eproto->bus_managers[manager_index].bus.user_data = bus->user_data;
 
     // 设置接口函数
     eproto->bus_managers[manager_index].status_callback = bus->status_callback;

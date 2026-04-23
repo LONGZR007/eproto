@@ -98,6 +98,7 @@ typedef struct eproto_bus_t {
     uint8_t* rx_buffer;               // 接收缓冲区
     uint16_t rx_buffer_size;          // 接收缓冲区大小
     const char* name;                 // 总线名称，用于日志和调试
+    void* user_data;                  // 用户自定义数据指针
     eproto_status_callback_t status_callback;  // 状态回调函数
     receive_callback_t receive_callback;       // 接收回调函数
     eproto_forward_callback_t forward_callback;  // 转发回调函数
