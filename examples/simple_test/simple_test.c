@@ -411,7 +411,7 @@ void* device1_thread(void* arg) {
     fflush(stdout);
     g_device1_eproto = &data->eproto_inst;
 
-    eproto_bus_config_t bus_config = {
+    eproto_bus_t bus = {
         .self_addr = 0x01,
         .send = device1_bus_send,
         .rx_buffer = data->rx_buffer,
@@ -421,7 +421,7 @@ void* device1_thread(void* arg) {
         .receive_callback = device1_receive_callback,
         .forward_callback = NULL
     };
-    error = eproto_add_bus(&data->eproto_inst, &bus_config);
+    error = eproto_add_bus(&data->eproto_inst, &bus);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add bus\n", data->device_name);
         fflush(stdout);
@@ -528,7 +528,7 @@ void* device2_thread(void* arg) {
     fflush(stdout);
     g_device2_eproto = &data->eproto_inst;
 
-    eproto_bus_config_t bus_config = {
+    eproto_bus_t bus = {
         .self_addr = 0x02,
         .send = device2_bus_send,
         .rx_buffer = data->rx_buffer,
@@ -538,7 +538,7 @@ void* device2_thread(void* arg) {
         .receive_callback = device2_receive_callback,
         .forward_callback = NULL
     };
-    error = eproto_add_bus(&data->eproto_inst, &bus_config);
+    error = eproto_add_bus(&data->eproto_inst, &bus);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add bus\n", data->device_name);
         fflush(stdout);

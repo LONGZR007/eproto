@@ -88,7 +88,7 @@ typedef eproto_error_t (*eproto_forward_callback_t)(uint8_t source_addr, uint8_t
                                                    eproto_forward_post_func_t* post_func,
                                                    void** private_data);
 
-// 总线配置结构体
+// 总线接口
 typedef struct {
     uint8_t self_addr;                // 总线的自身地址
     eproto_bus_send_func_t send;      // 发送函数
@@ -98,12 +98,6 @@ typedef struct {
     eproto_status_callback_t status_callback;  // 状态回调函数
     receive_callback_t receive_callback;       // 接收回调函数
     eproto_forward_callback_t forward_callback;  // 转发回调函数
-} eproto_bus_config_t;
-
-// 总线接口
-typedef struct {
-    eproto_bus_send_func_t send;  // 发送函数
-    uint8_t self_addr;                // 对应的设备地址
 } eproto_bus_t;
 
 // 设备队列结构体
@@ -187,10 +181,10 @@ void eproto_destroy(eproto_t* eproto);
 /**
  * 向eProto实例添加总线
  * @param eproto            指向eProto实例的指针
- * @param bus_config        总线配置结构体
+ * @param bus               总线结构体
  * @return                  操作结果，EPROTO_OK表示成功，其他值表示错误
  */
-eproto_error_t eproto_add_bus(eproto_t* eproto, eproto_bus_config_t* bus_config);
+eproto_error_t eproto_add_bus(eproto_t* eproto, eproto_bus_t* bus);
 
 /**
  * 向指定总线添加目标设备地址
