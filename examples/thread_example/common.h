@@ -123,24 +123,24 @@ void mock_unlock(void);
 void mock_wakeup(void);
 
 // 模拟状态回调函数
-void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length);
+void mock_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length);
 
 // 设备1接收回调函数
-void device1_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
+void device1_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
 
 // 设备1发送回调函数
 void device1_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length,
                            void* private_data);
 
 // 设备2接收回调函数
-void device2_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
+void device2_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
 
 // 设备2发送回调函数
 void device2_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length,
                            void* private_data);
 
 // 设备3接收回调函数
-void device3_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
+void device3_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
 
 // 设备3发送回调函数
 void device3_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length,

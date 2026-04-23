@@ -28,7 +28,8 @@
 eproto_t* g_device1_eproto = NULL;
 
 // 设备1接收回调函数
-void device1_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+void device1_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Device 1 received data from device 0x%02X, packet ID: %d: ", source_address, packet_id);
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -244,8 +245,18 @@ void* device1_thread(void* arg) {
     g_device1_eproto = &data->eproto_inst;
 
     // 添加路由（使用设备1自己的总线地址0x01）
-    error = eproto_add_bus(&data->eproto_inst, 0x01, device1_bus_send, data->rx_buffer, sizeof(data->rx_buffer),
-                           "device1_bus", mock_status_callback, device1_receive_callback, NULL);
+    eproto_bus_t bus = {
+        .self_addr = 0x01,
+        .send = device1_bus_send,
+        .rx_buffer = data->rx_buffer,
+        .rx_buffer_size = sizeof(data->rx_buffer),
+        .name = "device1_bus",
+        .user_data = NULL,
+        .status_callback = mock_status_callback,
+        .receive_callback = device1_receive_callback,
+        .forward_callback = NULL
+    };
+    error = eproto_add_bus(&data->eproto_inst, &bus);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add route\n", data->device_name);
         pthread_exit(NULL);

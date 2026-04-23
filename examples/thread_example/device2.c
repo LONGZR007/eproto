@@ -28,7 +28,8 @@
 eproto_t* g_device2_eproto = NULL;
 
 // 设备2接收回调函数
-void device2_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+void device2_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Device 2 received data from device 0x%02X, packet ID: %d: ", source_address, packet_id);
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -186,8 +187,18 @@ void* device2_thread(void* arg) {
     g_device2_eproto = &data->eproto_inst;
 
     // 添加路由（使用设备2自己的总线2地址0x02）
-    error = eproto_add_bus(&data->eproto_inst, 0x02, device2_bus_send, data->rx_buffer, sizeof(data->rx_buffer),
-                           "device2_bus", mock_status_callback, device2_receive_callback, NULL);
+    eproto_bus_t bus1 = {
+        .self_addr = 0x02,
+        .send = device2_bus_send,
+        .rx_buffer = data->rx_buffer,
+        .rx_buffer_size = sizeof(data->rx_buffer),
+        .name = "device2_bus",
+        .user_data = NULL,
+        .status_callback = mock_status_callback,
+        .receive_callback = device2_receive_callback,
+        .forward_callback = NULL
+    };
+    error = eproto_add_bus(&data->eproto_inst, &bus1);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add route\n", data->device_name);
         pthread_exit(NULL);
@@ -203,8 +214,18 @@ void* device2_thread(void* arg) {
     printf("%s: Target device 0x01 added successfully\n", data->device_name);
 
     // 添加第二条总线（使用设备2自己的总线3地址0x03）
-    error = eproto_add_bus(&data->eproto_inst, 0x03, device2_bus2_send, data->rx_buffer2, sizeof(data->rx_buffer2),
-                           "device2_bus2", mock_status_callback, device2_receive_callback, NULL);
+    eproto_bus_t bus2 = {
+        .self_addr = 0x03,
+        .send = device2_bus2_send,
+        .rx_buffer = data->rx_buffer2,
+        .rx_buffer_size = sizeof(data->rx_buffer2),
+        .name = "device2_bus2",
+        .user_data = NULL,
+        .status_callback = mock_status_callback,
+        .receive_callback = device2_receive_callback,
+        .forward_callback = NULL
+    };
+    error = eproto_add_bus(&data->eproto_inst, &bus2);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add second bus\n", data->device_name);
         pthread_exit(NULL);
