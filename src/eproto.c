@@ -205,7 +205,7 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_se
     eproto->bus_managers[manager_index].destination_device_count = 0;
 
     // 初始化接收缓冲区（必须由用户提供）
-    eproto_ring_buffer_init(&eproto->bus_managers[manager_index].bus.rx_buffer, rx_buffer, rx_buffer_size);
+    eproto_ring_buffer_init(&eproto->bus_managers[manager_index].rx_buffer, rx_buffer, rx_buffer_size);
 
     // 初始化帧解析器
     eproto_frame_parser_config_t parser_config;
@@ -477,7 +477,7 @@ void eproto_receive_data(eproto_t* eproto, uint8_t bus_addr, const uint8_t* data
         return;
     eproto_bus_manager_t* bus_mgr = eproto_find_bus_by_addr(eproto, bus_addr);
     if (bus_mgr) {
-        eproto_ring_buffer_write(&bus_mgr->bus.rx_buffer, data, len);
+        eproto_ring_buffer_write(&bus_mgr->rx_buffer, data, len);
 
         // 调用用户提供的发送信号接口（如果有）
         if (eproto->user_functions.signal_send) {
@@ -503,7 +503,7 @@ static void eproto_process_received_data(eproto_t* eproto) {
 
 // 处理单个总线的接收到的数据
 static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, uint8_t bus_index) {
-    eproto_ring_buffer_t* rx_buffer = &bus_mgr->bus.rx_buffer;
+    eproto_ring_buffer_t* rx_buffer = &bus_mgr->rx_buffer;
 
     if (eproto_ring_buffer_available(rx_buffer) > 0) {
         EPROTO_DEBUG_LOG("%s: Processing %d bytes in bus %d\n", EPROTO_BUS_NAME(bus_mgr),

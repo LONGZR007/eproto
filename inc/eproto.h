@@ -46,7 +46,6 @@ typedef void (*eproto_bus_send_func_t)(uint8_t* data, uint16_t length);
 // 总线接口
 typedef struct {
     eproto_bus_send_func_t send;  // 发送函数
-    eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
     uint8_t self_addr;                // 对应的设备地址
 } eproto_bus_t;
 
@@ -126,6 +125,7 @@ typedef eproto_error_t (*eproto_forward_callback_t)(uint8_t source_addr, uint8_t
 typedef struct {
     eproto_bus_t bus;                // 总线接口（实体）
     const char* name;                // 总线名称，用于日志和调试
+    eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
 
     // 帧解析器
     eproto_frame_parser_t parser;
