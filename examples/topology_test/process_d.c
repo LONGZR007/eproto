@@ -145,7 +145,8 @@ void d_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* d
     }
 }
 
-void d_bus8_send(uint8_t* data, uint16_t length) {
+void d_bus8_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Process D bus8 sending: ");
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -156,7 +157,8 @@ void d_bus8_send(uint8_t* data, uint16_t length) {
     ipc_send_data(&g_ipc_tx_channel_a, data, length);
 }
 
-void d_bus9_send(uint8_t* data, uint16_t length) {
+void d_bus9_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Process D bus9 sending: ");
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -167,7 +169,8 @@ void d_bus9_send(uint8_t* data, uint16_t length) {
     ipc_send_data(&g_ipc_tx_channel_c, data, length);
 }
 
-void d_bus10_send(uint8_t* data, uint16_t length) {
+void d_bus10_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Process D bus10 sending: ");
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);

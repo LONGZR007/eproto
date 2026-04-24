@@ -1246,7 +1246,7 @@ static eproto_error_t eproto_send_frame(eproto_t* eproto, eproto_bus_manager_t* 
     }
 
     // 发送帧
-    bus_mgr->bus.send(send_buffer, frame_length);
+    bus_mgr->bus.send(&bus_mgr->bus, send_buffer, frame_length);
 
     // 释放缓冲区
     eproto->user_functions.free(send_buffer);

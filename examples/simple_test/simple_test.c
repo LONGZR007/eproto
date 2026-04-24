@@ -188,7 +188,8 @@ void device2_signal_send(void) {
     }
 }
 
-void device1_bus_send(uint8_t* data, uint16_t length) {
+void device1_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     pthread_mutex_lock(&g_mutex1);
     for (uint16_t i = 0; i < length; i++) {
         uint16_t next_head = (g_shared_buffer1_head + 1) % SHARED_BUFFER_SIZE;
@@ -226,7 +227,8 @@ uint16_t device1_bus_receive(uint8_t* buffer, uint16_t size) {
     return count;
 }
 
-void device2_bus_send(uint8_t* data, uint16_t length) {
+void device2_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     pthread_mutex_lock(&g_mutex2);
     for (uint16_t i = 0; i < length; i++) {
         uint16_t next_head = (g_shared_buffer2_head + 1) % SHARED_BUFFER_SIZE;

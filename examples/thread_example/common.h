@@ -81,25 +81,25 @@ extern pthread_mutex_t g_mutex4;
 extern __thread thread_data_t* g_current_thread_data;
 
 // 设备1的总线发送函数（写入共享缓冲区1）
-void device1_bus_send(uint8_t* data, uint16_t length);
+void device1_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length);
 
 // 设备1的总线接收函数（从共享缓冲区2读取）
 uint16_t device1_bus_receive(uint8_t* buffer, uint16_t size);
 
 // 设备2的总线发送函数（写入共享缓冲区2）
-void device2_bus_send(uint8_t* data, uint16_t length);
+void device2_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length);
 
 // 设备2的总线接收函数（从共享缓冲区1读取）
 uint16_t device2_bus_receive(uint8_t* buffer, uint16_t size);
 
 // 设备2的第二条总线发送函数（写入共享缓冲区3）
-void device2_bus2_send(uint8_t* data, uint16_t length);
+void device2_bus2_send(eproto_bus_t* bus, uint8_t* data, uint16_t length);
 
 // 设备2的第二条总线接收函数（从共享缓冲区4读取）
 uint16_t device2_bus2_receive(uint8_t* buffer, uint16_t size);
 
 // 设备3的总线发送函数（写入共享缓冲区4）
-void device3_bus_send(uint8_t* data, uint16_t length);
+void device3_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length);
 
 // 设备3的总线接收函数（从共享缓冲区3读取）
 uint16_t device3_bus_receive(uint8_t* buffer, uint16_t size);

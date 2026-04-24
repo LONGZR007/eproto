@@ -89,7 +89,8 @@ void mock_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* da
 }
 
 // 设备1的总线发送函数（写入共享缓冲区1）
-void device1_bus_send(uint8_t* data, uint16_t length) {
+void device1_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     pthread_mutex_lock(&g_mutex1);
     for (uint16_t i = 0; i < length; i++) {
         uint16_t next_head = (g_shared_buffer1_head + 1) % SHARED_BUFFER_SIZE;
@@ -129,7 +130,8 @@ uint16_t device1_bus_receive(uint8_t* buffer, uint16_t size) {
 }
 
 // 设备2的总线发送函数（写入共享缓冲区2）
-void device2_bus_send(uint8_t* data, uint16_t length) {
+void device2_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     pthread_mutex_lock(&g_mutex2);
     for (uint16_t i = 0; i < length; i++) {
         uint16_t next_head = (g_shared_buffer2_head + 1) % SHARED_BUFFER_SIZE;
@@ -169,7 +171,8 @@ uint16_t device2_bus_receive(uint8_t* buffer, uint16_t size) {
 }
 
 // 设备2的第二条总线发送函数（写入共享缓冲区3）
-void device2_bus2_send(uint8_t* data, uint16_t length) {
+void device2_bus2_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     pthread_mutex_lock(&g_mutex3);
     for (uint16_t i = 0; i < length; i++) {
         uint16_t next_head = (g_shared_buffer3_head + 1) % SHARED_BUFFER_SIZE;
@@ -209,7 +212,8 @@ uint16_t device2_bus2_receive(uint8_t* buffer, uint16_t size) {
 }
 
 // 设备3的总线发送函数（写入共享缓冲区4）
-void device3_bus_send(uint8_t* data, uint16_t length) {
+void device3_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     pthread_mutex_lock(&g_mutex4);
     for (uint16_t i = 0; i < length; i++) {
         uint16_t next_head = (g_shared_buffer4_head + 1) % SHARED_BUFFER_SIZE;

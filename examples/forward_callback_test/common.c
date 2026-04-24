@@ -99,7 +99,8 @@ void device_c_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16
 }
 
 // 设备 A 总线发送函数（发送到 A-B 缓冲区）
-void device_a_bus_send(uint8_t* data, uint16_t length) {
+void device_a_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     pthread_mutex_lock(&g_mutex_ab);
     for (uint16_t i = 0; i < length; i++) {
         uint16_t next_head = (g_shared_buffer_ab_head + 1) % SHARED_BUFFER_SIZE;
@@ -133,7 +134,8 @@ uint16_t device_a_bus_receive(uint8_t* buffer, uint16_t size) {
 }
 
 // 设备 B 总线 1 发送函数（发送到 B-A 缓冲区）
-void device_b_bus1_send(uint8_t* data, uint16_t length) {
+void device_b_bus1_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     pthread_mutex_lock(&g_mutex_ba);
     for (uint16_t i = 0; i < length; i++) {
         uint16_t next_head = (g_shared_buffer_ba_head + 1) % SHARED_BUFFER_SIZE;
@@ -167,7 +169,8 @@ uint16_t device_b_bus1_receive(uint8_t* buffer, uint16_t size) {
 }
 
 // 设备 B 总线 2 发送函数（发送到 B-C 缓冲区）
-void device_b_bus2_send(uint8_t* data, uint16_t length) {
+void device_b_bus2_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     pthread_mutex_lock(&g_mutex_bc);
     for (uint16_t i = 0; i < length; i++) {
         uint16_t next_head = (g_shared_buffer_bc_head + 1) % SHARED_BUFFER_SIZE;
@@ -201,7 +204,8 @@ uint16_t device_b_bus2_receive(uint8_t* buffer, uint16_t size) {
 }
 
 // 设备 C 总线发送函数（发送到 C-B 缓冲区）
-void device_c_bus_send(uint8_t* data, uint16_t length) {
+void device_c_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     pthread_mutex_lock(&g_mutex_cb);
     for (uint16_t i = 0; i < length; i++) {
         uint16_t next_head = (g_shared_buffer_cb_head + 1) % SHARED_BUFFER_SIZE;
