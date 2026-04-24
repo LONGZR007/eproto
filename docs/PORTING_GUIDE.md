@@ -115,7 +115,9 @@ void my_unlock(void) {
 需要实现 `eproto_bus_t` 结构体中的接口函数：
 
 ```c
-void my_bus_send(uint8_t* data, uint16_t length) {
+// 总线接口
+void my_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;  // 避免未使用参数警告
     // 实现数据发送
     uart_send(data, length);
 }
@@ -406,7 +408,8 @@ void my_unlock(void) {
 }
 
 // 总线接口
-void my_bus_send(uint8_t* data, uint16_t length) {
+void my_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;  // 避免未使用参数警告
     HAL_UART_Transmit(&huart1, data, length, HAL_MAX_DELAY);
 }
 
@@ -472,7 +475,8 @@ void my_unlock(void) {
 }
 
 // 总线接口
-void my_bus_send(uint8_t* data, uint16_t length) {
+void my_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;  // 避免未使用参数警告
     HAL_UART_Transmit(&huart1, data, length, HAL_MAX_DELAY);
 }
 
@@ -558,7 +562,8 @@ void my_unlock(void) {
 // 总线接口
 int serial_fd = -1;
 
-void my_bus_send(uint8_t* data, uint16_t length) {
+void my_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;  // 避免未使用参数警告
     write(serial_fd, data, length);
 }
 

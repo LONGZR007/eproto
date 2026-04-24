@@ -7,6 +7,9 @@
 ```c
 typedef struct eproto_bus_t eproto_bus_t;
 
+// 总线接口发送函数类型
+typedef void (*eproto_bus_send_func_t)(eproto_bus_t* bus, uint8_t* data, uint16_t length);
+
 typedef struct eproto_bus_t {
     uint8_t self_addr;                // 总线的自身地址
     eproto_bus_send_func_t send;      // 发送函数
@@ -22,6 +25,7 @@ typedef struct eproto_bus_t {
 
 - **self_addr**：总线的自身地址
 - **send**：发送数据的回调函数
+  - `bus`：总线结构体指针
   - `data`：要发送的数据
   - `length`：数据长度
 - **rx_buffer**：接收缓冲区
@@ -612,6 +616,14 @@ eproto_error_t my_forward_callback(eproto_bus_t* bus, uint8_t source_addr, uint8
     (void)private_data;  // 避免未使用参数警告
     // 执行转发操作
     return EPROTO_OK;
+}
+
+// 总线发送函数示例
+void my_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;  // 避免未使用参数警告
+    // 实现总线发送逻辑，例如通过UART发送数据
+    // uart_send(data, length);
+    printf("Bus sending %d bytes\n", length);
 }
 ```
 
