@@ -5,18 +5,32 @@
 ### 1.1 总线接口
 
 ```c
-typedef struct {
-    void (*send)(uint8_t* data, uint16_t length);
-    eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
-    uint8_t self_addr;                // 对应的设备地址
+typedef struct eproto_bus_t eproto_bus_t;
+
+typedef struct eproto_bus_t {
+    uint8_t self_addr;                // 总线的自身地址
+    eproto_bus_send_func_t send;      // 发送函数
+    uint8_t* rx_buffer;               // 接收缓冲区
+    uint16_t rx_buffer_size;          // 接收缓冲区大小
+    const char* name;                 // 总线名称，用于日志和调试
+    void* user_data;                  // 用户自定义数据指针
+    eproto_status_callback_t status_callback;  // 状态回调函数
+    receive_callback_t receive_callback;       // 接收回调函数
+    eproto_forward_callback_t forward_callback;  // 转发回调函数
 } eproto_bus_t;
 ```
 
+- **self_addr**：总线的自身地址
 - **send**：发送数据的回调函数
   - `data`：要发送的数据
   - `length`：数据长度
-- **rx_buffer**：接收环形缓冲区
-- **self_addr**：总线对应的设备地址
+- **rx_buffer**：接收缓冲区
+- **rx_buffer_size**：接收缓冲区大小
+- **name**：总线名称，用于日志和调试
+- **user_data**：用户自定义数据指针
+- **status_callback**：状态回调函数
+- **receive_callback**：接收回调函数
+- **forward_callback**：转发回调函数
 
 ### 1.2 信号回调接口
 
@@ -53,14 +67,12 @@ typedef struct {
 
 ```c
 typedef struct {
-    eproto_bus_t* bus;               // 总线接口
-    const char* name;                // 总线名称，用于日志和调试
+    eproto_bus_t bus;                // 总线接口（实体）
+    eproto_ring_buffer_t rx_buffer;  // 接收环形缓冲区
 
     // 帧解析器
     eproto_frame_parser_t parser;
-    // 接口函数
-    eproto_status_callback_t status_callback;
-    void (*receive_callback)(uint8_t src_addr, uint16_t packet_id, uint8_t* data, uint16_t length);
+
     // 状态变量
     uint16_t next_packet_id;
     uint16_t last_id;  // 上次处理的包ID，用于重发包检测
@@ -161,21 +173,13 @@ void eproto_destroy(eproto_t* eproto);
 #### eproto_add_bus
 
 ```c
-eproto_error_t eproto_add_bus(eproto_t* eproto, uint8_t self_addr, eproto_bus_t* bus, uint8_t* rx_buffer,
-                              uint16_t rx_buffer_size, const char* name,
-                              eproto_status_callback_t status_callback, receive_callback_t receive_callback);
+eproto_error_t eproto_add_bus(eproto_t* eproto, eproto_bus_t* bus);
 ```
 
 - **功能**：向eProto实例添加总线
 - **参数**：
   - `eproto`：指向eProto实例的指针
-  - `self_addr`：总线的自身地址
-  - `bus`：总线接口结构体
-  - `rx_buffer`：接收缓冲区
-  - `rx_buffer_size`：接收缓冲区大小
-  - `name`：总线名称，用于日志和调试
-  - `status_callback`：状态回调函数
-  - `receive_callback`：接收回调函数，用于处理接收到的数据包
+  - `bus`：总线结构体，包含总线的配置信息和回调函数
 - **返回值**：操作结果，`EPROTO_OK`表示成功，其他值表示错误
 
 #### eproto_add_destination_device
@@ -369,27 +373,65 @@ typedef void (*eproto_packet_callback_t)(eproto_send_status_t status, uint16_t p
 ### 3.2 状态回调函数
 
 ```c
-typedef void (*eproto_status_callback_t)(eproto_status_t status, uint8_t* data, uint16_t length);
+typedef void (*eproto_status_callback_t)(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length);
 ```
 
 - **参数**：
+  - `bus`：总线结构体指针，指向产生该状态的总线
   - `status`：状态码
   - `data`：状态相关数据
   - `length`：数据长度
 
-
-
 ### 3.3 接收回调函数
 
 ```c
-typedef void (*receive_callback_t)(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
+typedef void (*receive_callback_t)(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
 ```
 
 - **参数**：
+  - `bus`：总线结构体指针，指向接收到数据的总线
   - `source_address`：数据包的源地址
   - `packet_id`：数据包的 ID
   - `data`：接收到的数据
   - `length`：数据长度
+
+### 3.4 转发后处理回调函数
+
+```c
+typedef void (*eproto_forward_post_func_t)(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr,
+                                         uint8_t* out_data, uint16_t out_length,
+                                         void* private_data);
+```
+
+- **参数**：
+  - `bus`：总线结构体指针，指向执行转发的总线
+  - `source_addr`：源地址
+  - `dest_addr`：目标地址
+  - `out_data`：转发的数据
+  - `out_length`：数据长度
+  - `private_data`：私有数据
+
+### 3.5 转发回调函数
+
+```c
+typedef eproto_error_t (*eproto_forward_callback_t)(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr,
+                                                   uint8_t* data, uint16_t length,
+                                                   uint8_t** out_data, uint16_t* out_length,
+                                                   eproto_forward_post_func_t* post_func,
+                                                   void** private_data);
+```
+
+- **参数**：
+  - `bus`：总线结构体指针，指向执行转发的总线
+  - `source_addr`：源地址
+  - `dest_addr`：目标地址
+  - `data`：要转发的数据
+  - `length`：数据长度
+  - `out_data`：转发后的数据
+  - `out_length`：转发后的数据长度
+  - `post_func`：后处理回调函数
+  - `private_data`：私有数据
+- **返回值**：操作结果，`EPROTO_OK`表示成功，其他值表示错误
 
 
 
@@ -434,14 +476,21 @@ if (error != EPROTO_OK) {
 }
 
 // 3. 定义总线接口
+uint8_t rx_buffer[256];
 eproto_bus_t bus = {
-    .send = my_bus_send
+    .self_addr = 0x01,             // 总线的自身地址
+    .send = my_bus_send,           // 发送函数
+    .rx_buffer = rx_buffer,        // 接收缓冲区
+    .rx_buffer_size = sizeof(rx_buffer),  // 接收缓冲区大小
+    .name = "my_bus",             // 总线名称，用于日志和调试
+    .user_data = NULL,             // 用户自定义数据指针
+    .status_callback = my_status_callback,  // 状态回调函数
+    .receive_callback = my_receive_callback,  // 接收回调函数
+    .forward_callback = NULL        // 转发回调函数
 };
 
 // 4. 添加总线
-uint8_t rx_buffer[256];
-error = eproto_add_bus(&eproto_inst, 0x01, &bus, rx_buffer, sizeof(rx_buffer),
-                       "my_bus", my_status_callback, my_receive_callback);
+error = eproto_add_bus(&eproto_inst, &bus);
 if (error != EPROTO_OK) {
     // 处理错误
     return error;
@@ -509,14 +558,16 @@ void my_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* 
 }
 
 // 接收回调函数
-void my_receive_callback(uint8_t src_addr, uint16_t packet_id, uint8_t* data, uint16_t length) {
+void my_receive_callback(eproto_bus_t* bus, uint8_t src_addr, uint16_t packet_id, uint8_t* data, uint16_t length) {
+    (void)bus;  // 避免未使用参数警告
     printf("Received data from device 0x%02X, packet ID: %d\n", src_addr, packet_id);
     // 处理接收到的数据
     // 可以调用 eproto_send_user_reply 发送回复
 }
 
 // 状态回调函数
-void my_status_callback(eproto_status_t status, uint8_t* data, uint16_t length) {
+void my_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length) {
+    (void)bus;  // 避免未使用参数警告
     switch (status) {
         case EPROTO_STATUS_CRC_ERROR:
             printf("CRC error\n");
@@ -529,6 +580,38 @@ void my_status_callback(eproto_status_t status, uint8_t* data, uint16_t length) 
             break;
         // 其他状态处理
     }
+}
+
+// 转发后处理回调函数
+void my_forward_post_func(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr, 
+                         uint8_t* out_data, uint16_t out_length, 
+                         void* private_data) {
+    (void)bus;  // 避免未使用参数警告
+    (void)source_addr;  // 避免未使用参数警告
+    (void)dest_addr;  // 避免未使用参数警告
+    (void)out_data;  // 避免未使用参数警告
+    (void)out_length;  // 避免未使用参数警告
+    (void)private_data;  // 避免未使用参数警告
+    // 执行后处理操作
+}
+
+// 转发回调函数
+eproto_error_t my_forward_callback(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr, 
+                                 uint8_t* data, uint16_t length, 
+                                 uint8_t** out_data, uint16_t* out_length, 
+                                 eproto_forward_post_func_t* post_func, 
+                                 void** private_data) {
+    (void)bus;  // 避免未使用参数警告
+    (void)source_addr;  // 避免未使用参数警告
+    (void)dest_addr;  // 避免未使用参数警告
+    (void)data;  // 避免未使用参数警告
+    (void)length;  // 避免未使用参数警告
+    (void)out_data;  // 避免未使用参数警告
+    (void)out_length;  // 避免未使用参数警告
+    (void)post_func;  // 避免未使用参数警告
+    (void)private_data;  // 避免未使用参数警告
+    // 执行转发操作
+    return EPROTO_OK;
 }
 ```
 

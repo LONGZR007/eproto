@@ -28,9 +28,10 @@
 #### 2.1.1 后处理回调函数
 ```c
 // 后处理回调函数，用于释放资源
-void my_forward_post_func(uint8_t source_addr, uint8_t dest_addr, 
+void my_forward_post_func(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr, 
                          uint8_t* out_data, uint16_t out_length,
                          void* private_data) {
+    (void)bus;  // 避免未使用参数警告
     // 释放加密后的数据
     if (out_data) {
         free(out_data);
@@ -41,11 +42,12 @@ void my_forward_post_func(uint8_t source_addr, uint8_t dest_addr,
 #### 2.1.2 转发回调函数
 ```c
 // 转发回调函数，用于解密和重新加密数据
-eproto_error_t my_forward_callback(uint8_t source_addr, uint8_t dest_addr, 
+eproto_error_t my_forward_callback(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr, 
                                   uint8_t* data, uint16_t length, 
                                   uint8_t** out_data, uint16_t* out_length,
                                   eproto_forward_post_func_t* post_func,
                                   void** private_data) {
+    (void)bus;  // 避免未使用参数警告
     // 1. 解密从 source_addr 收到的数据
     uint8_t* decrypted_data = decrypt_data(data, length, get_key_for_device(source_addr));
     
@@ -68,15 +70,28 @@ eproto_error_t my_forward_callback(uint8_t source_addr, uint8_t dest_addr,
 在添加总线时注册转发回调函数：
 
 ```c
-// 添加总线时注册回调
-eproto_add_bus(&g_eproto, 0x01, my_send_func, rx_buffer, sizeof(rx_buffer), "bus1",
-               my_status_callback, my_receive_callback,
-               my_forward_callback);
+// 定义总线接口
+uint8_t rx_buffer[256];
+eproto_bus_t bus = {
+    .self_addr = 0x01,             // 总线的自身地址
+    .send = my_send_func,           // 发送函数
+    .rx_buffer = rx_buffer,        // 接收缓冲区
+    .rx_buffer_size = sizeof(rx_buffer),  // 接收缓冲区大小
+    .name = "bus1",                // 总线名称，用于日志和调试
+    .user_data = NULL,             // 用户自定义数据指针
+    .status_callback = my_status_callback,  // 状态回调函数
+    .receive_callback = my_receive_callback,  // 接收回调函数
+    .forward_callback = my_forward_callback  // 转发回调函数
+};
+
+// 添加总线
+eproto_add_bus(&g_eproto, &bus);
 ```
 
 ### 2.3 回调函数参数说明
 
 #### 转发回调函数参数
+- `bus`: 总线结构体指针，指向执行转发的总线
 - `source_addr`: 数据来源总线的地址（数据从哪个总线接收）
 - `dest_addr`: 数据目标总线的地址（数据将从哪个总线发送，即当前回调所属的总线）
 - `data`: 原始数据
@@ -87,6 +102,7 @@ eproto_add_bus(&g_eproto, 0x01, my_send_func, rx_buffer, sizeof(rx_buffer), "bus
 - `private_data`: 私有数据，可用于传递额外信息给后处理回调
 
 #### 后处理回调函数参数
+- `bus`: 总线结构体指针，指向执行转发的总线
 - `source_addr`: 数据来源总线的地址
 - `dest_addr`: 数据目标总线的地址
 - `out_data`: 转发的数据
