@@ -138,10 +138,7 @@ typedef struct {
 
     // 帧解析器
     eproto_frame_parser_t parser;
-    // 接口函数
-    eproto_status_callback_t status_callback;
-    receive_callback_t receive_callback;
-    eproto_forward_callback_t forward_callback;  // 新增：转发回调
+
     // 状态变量
     uint16_t next_packet_id;
     uint16_t last_id;  // 上次处理的包ID，用于重发包检测
