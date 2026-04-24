@@ -167,7 +167,8 @@ void c_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* d
     }
 }
 
-void c_bus6_send(uint8_t* data, uint16_t length) {
+void c_bus6_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Process C bus6 sending: ");
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -178,7 +179,8 @@ void c_bus6_send(uint8_t* data, uint16_t length) {
     ipc_send_data(&g_ipc_tx_channel_b, data, length);
 }
 
-void c_bus7_send(uint8_t* data, uint16_t length) {
+void c_bus7_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Process C bus7 sending: ");
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);

@@ -115,16 +115,16 @@ void device_b_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16
 void device_c_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
 
 // 总线发送/接收函数
-void device_a_bus_send(uint8_t* data, uint16_t length);
+void device_a_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length);
 uint16_t device_a_bus_receive(uint8_t* buffer, uint16_t size);
 
-void device_b_bus1_send(uint8_t* data, uint16_t length);
+void device_b_bus1_send(eproto_bus_t* bus, uint8_t* data, uint16_t length);
 uint16_t device_b_bus1_receive(uint8_t* buffer, uint16_t size);
 
-void device_b_bus2_send(uint8_t* data, uint16_t length);
+void device_b_bus2_send(eproto_bus_t* bus, uint8_t* data, uint16_t length);
 uint16_t device_b_bus2_receive(uint8_t* buffer, uint16_t size);
 
-void device_c_bus_send(uint8_t* data, uint16_t length);
+void device_c_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length);
 uint16_t device_c_bus_receive(uint8_t* buffer, uint16_t size);
 
 // 加解密函数

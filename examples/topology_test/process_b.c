@@ -169,7 +169,8 @@ void b_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* d
     }
 }
 
-void b_bus3_send(uint8_t* data, uint16_t length) {
+void b_bus3_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Process B bus3 sending: ");
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -180,7 +181,8 @@ void b_bus3_send(uint8_t* data, uint16_t length) {
     ipc_send_data(&g_ipc_tx_channel_a, data, length);
 }
 
-void b_bus4_send(uint8_t* data, uint16_t length) {
+void b_bus4_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Process B bus4 sending: ");
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -191,7 +193,8 @@ void b_bus4_send(uint8_t* data, uint16_t length) {
     ipc_send_data(&g_ipc_tx_channel_c, data, length);
 }
 
-void b_bus5_send(uint8_t* data, uint16_t length) {
+void b_bus5_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Process B bus5 sending: ");
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);

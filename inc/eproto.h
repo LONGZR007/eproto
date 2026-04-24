@@ -41,7 +41,7 @@
 // | 包ID(2) | 数据(n) | CRC(2) |
 
 // 总线接口发送函数类型
-typedef void (*eproto_bus_send_func_t)(uint8_t* data, uint16_t length);
+typedef void (*eproto_bus_send_func_t)(eproto_bus_t* bus, uint8_t* data, uint16_t length);
 
 // 信号回调接口
 typedef enum {
