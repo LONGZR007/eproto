@@ -189,7 +189,10 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, eproto_bus_t* bus) {
     eproto->bus_managers[manager_index].bus.send = bus->send;
     eproto->bus_managers[manager_index].bus.self_addr = bus->self_addr;
     eproto->bus_managers[manager_index].bus.user_data = bus->user_data;
-
+    eproto->bus_managers[manager_index].bus.name = bus->name;
+    eproto->bus_managers[manager_index].bus.status_callback = bus->status_callback;
+    eproto->bus_managers[manager_index].bus.receive_callback = bus->receive_callback;
+    eproto->bus_managers[manager_index].bus.forward_callback = bus->forward_callback;
 
     // 初始化目标设备地址数组
     eproto->bus_managers[manager_index].destination_device_count = 0;
