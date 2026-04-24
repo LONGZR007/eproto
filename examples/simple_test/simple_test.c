@@ -95,7 +95,8 @@ void mock_unlock(void) {
 void mock_wakeup(void) {
 }
 
-void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length) {
+void mock_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length) {
+    (void)bus;
     (void)data;
     (void)length;
     printf("Status callback: status = %d\n", status);
@@ -263,7 +264,8 @@ uint16_t device2_bus_receive(uint8_t* buffer, uint16_t size) {
     return count;
 }
 
-void device1_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+void device1_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Device 1 received data from device 0x%02X, packet ID: %d: ", source_address, packet_id);
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -279,7 +281,8 @@ void device1_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_
     }
 }
 
-void device2_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+void device2_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Device 2 received data from device 0x%02X, packet ID: %d: ", source_address, packet_id);
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -411,8 +414,17 @@ void* device1_thread(void* arg) {
     fflush(stdout);
     g_device1_eproto = &data->eproto_inst;
 
-    error = eproto_add_bus(&data->eproto_inst, 0x01, device1_bus_send, data->rx_buffer, sizeof(data->rx_buffer),
-                           "device1_bus", mock_status_callback, device1_receive_callback, NULL);
+    eproto_bus_t bus = {
+        .self_addr = 0x01,
+        .send = device1_bus_send,
+        .rx_buffer = data->rx_buffer,
+        .rx_buffer_size = sizeof(data->rx_buffer),
+        .name = "device1_bus",
+        .status_callback = mock_status_callback,
+        .receive_callback = device1_receive_callback,
+        .forward_callback = NULL
+    };
+    error = eproto_add_bus(&data->eproto_inst, &bus);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add bus\n", data->device_name);
         fflush(stdout);
@@ -519,8 +531,17 @@ void* device2_thread(void* arg) {
     fflush(stdout);
     g_device2_eproto = &data->eproto_inst;
 
-    error = eproto_add_bus(&data->eproto_inst, 0x02, device2_bus_send, data->rx_buffer, sizeof(data->rx_buffer),
-                           "device2_bus", mock_status_callback, device2_receive_callback, NULL);
+    eproto_bus_t bus = {
+        .self_addr = 0x02,
+        .send = device2_bus_send,
+        .rx_buffer = data->rx_buffer,
+        .rx_buffer_size = sizeof(data->rx_buffer),
+        .name = "device2_bus",
+        .status_callback = mock_status_callback,
+        .receive_callback = device2_receive_callback,
+        .forward_callback = NULL
+    };
+    error = eproto_add_bus(&data->eproto_inst, &bus);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add bus\n", data->device_name);
         fflush(stdout);

@@ -121,8 +121,18 @@ void* device_a_thread(void* arg) {
     fflush(stdout);
     g_device_a_data = data;
 
-    error = eproto_add_bus(&data->eproto_inst, DEVICE_A_ADDRESS, device_a_bus_send, data->rx_buffer, sizeof(data->rx_buffer),
-                          "device_a_bus", mock_status_callback, device_a_receive_callback, NULL);
+    eproto_bus_t bus = {
+        .self_addr = DEVICE_A_ADDRESS,
+        .send = device_a_bus_send,
+        .rx_buffer = data->rx_buffer,
+        .rx_buffer_size = sizeof(data->rx_buffer),
+        .name = "device_a_bus",
+        .user_data = NULL,
+        .status_callback = mock_status_callback,
+        .receive_callback = device_a_receive_callback,
+        .forward_callback = NULL
+    };
+    error = eproto_add_bus(&data->eproto_inst, &bus);
     if (error != EPROTO_OK) {
         printf("%s: Failed to add bus\n", data->device_name);
         fflush(stdout);

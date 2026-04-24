@@ -109,7 +109,8 @@ void mock_wakeup(void) {
     printf("Waking up...\n");
 }
 
-void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length) {
+void mock_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length) {
+    (void)bus;
     (void)data;
     (void)length;
     switch (status) {
@@ -129,7 +130,8 @@ void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length
     }
 }
 
-void b_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+void b_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Process B: Received data from device %02X, packet ID: %d: ", source_address, packet_id);
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -311,8 +313,18 @@ int main(void) {
 
     // 总线3（连接到A1）
     uint8_t b_rx_buffer3[256];
-    error = eproto_add_bus(&g_eproto, 0x03, b_bus3_send, b_rx_buffer3, sizeof(b_rx_buffer3), "b_bus3",
-                           mock_status_callback, b_receive_callback, NULL);
+    eproto_bus_t bus3 = {
+        .self_addr = 0x03,
+        .send = b_bus3_send,
+        .rx_buffer = b_rx_buffer3,
+        .rx_buffer_size = sizeof(b_rx_buffer3),
+        .name = "b_bus3",
+        .user_data = NULL,
+        .status_callback = mock_status_callback,
+        .receive_callback = b_receive_callback,
+        .forward_callback = NULL
+    };
+    error = eproto_add_bus(&g_eproto, &bus3);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 3\n");
         return 1;
@@ -321,8 +333,18 @@ int main(void) {
 
     // 总线4（连接到C6）
     uint8_t b_rx_buffer4[256];
-    error = eproto_add_bus(&g_eproto, 0x04, b_bus4_send, b_rx_buffer4, sizeof(b_rx_buffer4), "b_bus4",
-                           mock_status_callback, b_receive_callback, NULL);
+    eproto_bus_t bus4 = {
+        .self_addr = 0x04,
+        .send = b_bus4_send,
+        .rx_buffer = b_rx_buffer4,
+        .rx_buffer_size = sizeof(b_rx_buffer4),
+        .name = "b_bus4",
+        .user_data = NULL,
+        .status_callback = mock_status_callback,
+        .receive_callback = b_receive_callback,
+        .forward_callback = NULL
+    };
+    error = eproto_add_bus(&g_eproto, &bus4);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 4\n");
         return 1;
@@ -331,8 +353,18 @@ int main(void) {
 
     // 总线5（连接到E11）
     uint8_t b_rx_buffer5[256];
-    error = eproto_add_bus(&g_eproto, 0x05, b_bus5_send, b_rx_buffer5, sizeof(b_rx_buffer5), "b_bus5",
-                           mock_status_callback, b_receive_callback, NULL);
+    eproto_bus_t bus5 = {
+        .self_addr = 0x05,
+        .send = b_bus5_send,
+        .rx_buffer = b_rx_buffer5,
+        .rx_buffer_size = sizeof(b_rx_buffer5),
+        .name = "b_bus5",
+        .user_data = NULL,
+        .status_callback = mock_status_callback,
+        .receive_callback = b_receive_callback,
+        .forward_callback = NULL
+    };
+    error = eproto_add_bus(&g_eproto, &bus5);
     if (error != EPROTO_OK) {
         printf("Failed to add bus 5\n");
         return 1;

@@ -80,7 +80,8 @@ void mock_wakeup(void) {
 }
 
 // 模拟状态回调函数
-void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length) {
+void mock_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length) {
+    (void)bus;
     (void)data;
     (void)length;
     // 简单的模拟，实际应用中应根据状态执行相应操作

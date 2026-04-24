@@ -108,7 +108,8 @@ void mock_wakeup(void) {
     printf("Waking up...\n");
 }
 
-void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length) {
+void mock_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length) {
+    (void)bus;
     (void)data;
     (void)length;
     switch (status) {
@@ -128,7 +129,8 @@ void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length
     }
 }
 
-void device_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+void device_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Device %c: Received data from device %02X, packet ID: %d: ", DEVICE_ID, source_address, packet_id);
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -302,10 +304,18 @@ int main(int argc, char *argv[]) {
         char bus_name[16];
         sprintf(bus_name, "bus%d", i+1);
         
-        error = eproto_add_bus(&g_eproto, bus_address, bus_send_functions[i], 
-                              rx_buffers[i], sizeof(rx_buffers[i]), 
-                              bus_name,
-                              mock_status_callback, device_receive_callback, NULL);
+        eproto_bus_t bus = {
+            .self_addr = bus_address,
+            .send = bus_send_functions[i],
+            .rx_buffer = rx_buffers[i],
+            .rx_buffer_size = sizeof(rx_buffers[i]),
+            .name = bus_name,
+            .user_data = NULL,
+            .status_callback = mock_status_callback,
+            .receive_callback = device_receive_callback,
+            .forward_callback = NULL
+        };
+        error = eproto_add_bus(&g_eproto, &bus);
         if (error != EPROTO_OK) {
             printf("Failed to add bus %d\n", i+1);
             for (int j = 0; j < bus_count; j++) {

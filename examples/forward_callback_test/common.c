@@ -57,26 +57,30 @@ thread_data_t* g_device_b_data = NULL;
 thread_data_t* g_device_c_data = NULL;
 
 // 模拟状态回调函数
-void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length) {
+void mock_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length) {
+    (void)bus;
     (void)data;
     (void)length;
     printf("Status callback: status = %d\n", status);
 }
 
 // 设备 A 接收回调
-void device_a_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+void device_a_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Device A received data from device 0x%02X, packet ID: %d: ", source_address, packet_id);
     print_hex(data, length, "");
 }
 
 // 设备 B 接收回调
-void device_b_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+void device_b_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+    (void)bus;
     printf("Device B received data from device 0x%02X, packet ID: %d: ", source_address, packet_id);
     print_hex(data, length, "");
 }
 
 // 设备 C 接收回调
-void device_c_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+void device_c_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+    (void)bus;
     // 解密数据
     uint8_t key = KEY_BUS_B_C;
     uint8_t* decrypted_data = decrypt_data(data, length, key);
@@ -265,9 +269,10 @@ uint8_t get_key_for_bus(uint8_t bus_address) {
 }
 
 // 转发后处理回调函数
-void device_b_forward_post_func(uint8_t source_addr, uint8_t dest_addr, 
+void device_b_forward_post_func(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr, 
                               uint8_t* out_data, uint16_t out_length,
                               void* private_data) {
+    (void)bus;
     (void)source_addr;
     (void)dest_addr;
     (void)out_length;
@@ -278,11 +283,12 @@ void device_b_forward_post_func(uint8_t source_addr, uint8_t dest_addr,
 }
 
 // 转发回调函数
-eproto_error_t device_b_forward_callback(uint8_t source_addr, uint8_t dest_addr, 
+eproto_error_t device_b_forward_callback(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr, 
                                        uint8_t* data, uint16_t length, 
                                        uint8_t** out_data, uint16_t* out_length,
                                        eproto_forward_post_func_t* post_func,
                                        void** private_data) {
+    (void)bus;
     (void)private_data;
     printf("Device B: Forward callback called, source bus: 0x%02X, dest bus: 0x%02X, length: %d\n", source_addr, dest_addr, length);
     

@@ -109,10 +109,10 @@ extern thread_data_t* g_device_b_data;
 extern thread_data_t* g_device_c_data;
 
 // 公共函数声明
-void mock_status_callback(eproto_status_t status, uint8_t* data, uint16_t length);
-void device_a_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
-void device_b_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
-void device_c_receive_callback(uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
+void mock_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length);
+void device_a_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
+void device_b_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
+void device_c_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
 
 // 总线发送/接收函数
 void device_a_bus_send(uint8_t* data, uint16_t length);
@@ -135,12 +135,12 @@ uint8_t* decrypt_data(uint8_t* data, uint16_t length, uint8_t key);
 uint8_t get_key_for_bus(uint8_t bus_address);
 
 // 转发回调函数
-eproto_error_t device_b_forward_callback(uint8_t source_addr, uint8_t dest_addr, 
+eproto_error_t device_b_forward_callback(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr, 
                                        uint8_t* data, uint16_t length, 
                                        uint8_t** out_data, uint16_t* out_length,
                                        eproto_forward_post_func_t* post_func,
                                        void** private_data);
-void device_b_forward_post_func(uint8_t source_addr, uint8_t dest_addr, 
+void device_b_forward_post_func(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr, 
                               uint8_t* out_data, uint16_t out_length,
                               void* private_data);
 
