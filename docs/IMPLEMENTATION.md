@@ -243,13 +243,21 @@ eproto_error_t error = eproto_init(&eproto_inst, &user_functions);
 
 ```c
 // 定义总线接口
+uint8_t rx_buffer[256];
 eproto_bus_t bus = {
-    .send = my_bus_send
+    .self_addr = self_address,       // 总线的自身地址
+    .send = my_bus_send,             // 发送函数
+    .rx_buffer = rx_buffer,          // 接收缓冲区
+    .rx_buffer_size = sizeof(rx_buffer),  // 接收缓冲区大小
+    .name = "my_bus",               // 总线名称，用于日志和调试
+    .user_data = NULL,               // 用户自定义数据指针
+    .status_callback = status_callback,  // 状态回调函数
+    .receive_callback = receive_callback,  // 接收回调函数
+    .forward_callback = NULL          // 转发回调函数
 };
 
 // 添加总线
-error = eproto_add_bus(&eproto_inst, self_address, &bus, rx_buffer, sizeof(rx_buffer),
-                       "my_bus", status_callback, receive_callback);
+error = eproto_add_bus(&eproto_inst, &bus);
 ```
 
 ### 10.3 发送数据示例
