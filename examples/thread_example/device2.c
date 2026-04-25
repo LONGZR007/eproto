@@ -38,7 +38,7 @@ void device2_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_
 
     // 回复接收到的数据
     printf("Device 2: Sending reply...\n");
-    eproto_error_t error = eproto_send_user_reply(g_device2_eproto, 0x02, packet_id, data, length);
+    eproto_error_t error = eproto_send_user_reply(g_device2_eproto, source_address, packet_id, data, length);
     if (error != EPROTO_OK) {
         printf("Device 2: Failed to send reply\n");
     } else {
