@@ -40,6 +40,9 @@
 // 帧结构：| 帧头(1) | 版本号(1) | 长度(2) | 包类型(1) | 原地址(1) | 设备地址(1)
 // | 包ID(2) | 数据(n) | CRC(2) |
 
+// 前向声明总线接口结构体
+typedef struct eproto_bus_t eproto_bus_t;
+
 // 总线接口发送函数类型
 typedef void (*eproto_bus_send_func_t)(eproto_bus_t* bus, uint8_t* data, uint16_t length);
 
@@ -71,9 +74,6 @@ typedef enum {
     EPROTO_ERROR_SLEEP_FAILED,
     EPROTO_ERROR_WAKEUP_FAILED
 } eproto_error_t;
-
-// 前向声明总线接口结构体
-typedef struct eproto_bus_t eproto_bus_t;
 
 // 回调函数类型定义
 typedef void (*eproto_status_callback_t)(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length);
