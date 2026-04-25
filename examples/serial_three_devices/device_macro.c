@@ -44,7 +44,7 @@ static sem_t g_semaphore;
 static int g_semaphore_initialized = 0;
 
 // 总线发送函数数组
-static void (*bus_send_functions[5])(uint8_t* data, uint16_t length);
+static eproto_bus_send_func_t bus_send_functions[5];
 
 void* mock_malloc(size_t size) {
     return malloc(size);
@@ -169,7 +169,8 @@ void device_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8
 
 // 生成总线发送函数
 #define GENERATE_BUS_SEND_FUNCTION(index) \
-void bus##index##_send(uint8_t* data, uint16_t length) { \
+void bus##index##_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) { \
+    (void)bus; \
     printf("Device %c bus%d sending: ", (char)DEVICE_ID, index+1); \
     for (uint16_t i = 0; i < length; i++) { \
         printf("%02X ", data[i]); \
