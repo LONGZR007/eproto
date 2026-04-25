@@ -88,7 +88,7 @@ $(BUILDDIR)/device_c.o: $(SRC_DEVICE)
 
 $(BUILDDIR)/bus_config_macro_c.o: $(SRC_BUS_CONFIG)
 	@mkdir -p $(BUILDDIR)
-	$(CC) $(CFLAGS) -DBUS_CONFIGS="BUS_CONFIG(0x04, \"bus1\", 2, 0x02, 0x01, 0, 0)" -c $< -o $@
+	$(CC) $(CFLAGS) -DBUS_CONFIGS="BUS_CONFIG(0x04, \"bus1\", 2, 0x03, 0x01, 0, 0)" -c $< -o $@
 
 # Clean target
 clean:
