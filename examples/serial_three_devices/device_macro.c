@@ -173,7 +173,7 @@ void bus##index##_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) { \
     (void)bus; \
     printf("Device %c bus%d sending: ", (char)DEVICE_ID, index+1); \
     for (uint16_t i = 0; i < length; i++) { \
-        printf("%c", data[i]); \
+        printf("%02X ", data[i]); \
     } \
     printf("\n"); \
     serial_send_data(&g_serial_channels[index], data, length); \
@@ -190,7 +190,7 @@ void* receive_thread##index(void* arg) { \
         if (received > 0) { \
             printf("Device %c received from bus%d %d bytes: ", (char)DEVICE_ID, index+1, received); \
             for (int i = 0; i < received; i++) { \
-                printf("%c", rx_buffer[i]); \
+                printf("%02X ", rx_buffer[i]); \
             } \
             printf("\n"); \
             eproto_receive_data(&g_eproto, bus_address, rx_buffer, received); \
