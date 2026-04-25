@@ -133,7 +133,7 @@ void device_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t
     (void)bus;
     printf("Device %c: Received data from device %02X, packet ID: %d: ", DEVICE_ID, source_address, packet_id);
     for (uint16_t i = 0; i < length; i++) {
-        printf("%02X ", data[i]);
+        printf("%c", data[i]);
     }
     printf("\n");
 
@@ -150,7 +150,7 @@ void device_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8
             if (data && length > 0) {
                 printf("Device %c: Received response: ", DEVICE_ID);
                 for (uint16_t i = 0; i < length; i++) {
-                    printf("%02X ", data[i]);
+                    printf("%c", data[i]);
                 }
                 printf("\n");
             }
@@ -173,7 +173,7 @@ void bus##index##_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) { \
     (void)bus; \
     printf("Device %c bus%d sending: ", (char)DEVICE_ID, index+1); \
     for (uint16_t i = 0; i < length; i++) { \
-        printf("%02X ", data[i]); \
+        printf("%c", data[i]); \
     } \
     printf("\n"); \
     serial_send_data(&g_serial_channels[index], data, length); \
@@ -190,7 +190,7 @@ void* receive_thread##index(void* arg) { \
         if (received > 0) { \
             printf("Device %c received from bus%d %d bytes: ", (char)DEVICE_ID, index+1, received); \
             for (int i = 0; i < received; i++) { \
-                printf("%02X ", rx_buffer[i]); \
+                printf("%c", rx_buffer[i]); \
             } \
             printf("\n"); \
             eproto_receive_data(&g_eproto, bus_address, rx_buffer, received); \
@@ -226,11 +226,11 @@ void print_help(void) {
     printf("\nAvailable commands:\n");
     printf(
         "  send <device_addr> <need_reply> <data...> - Send data to device "
-        "(e.g., send 2 1 11 22 33)\n"
+        "(e.g., send 2 1 hello world)\n"
     );
     printf(
         "  send_reply <data...> - Send reply to last received message (e.g., "
-        "send_reply AA BB CC)\n"
+        "send_reply hello)\n"
     );
     printf("  help - Show this help message\n");
     printf("  quit - Exit the program\n");
@@ -399,9 +399,9 @@ int main(int argc, char *argv[]) {
                             int data_len = 0;
                             char* token = strtok(rest, " ");
                             while (token && data_len < 256) {
-                                unsigned int val;
-                                if (sscanf(token, "%x", &val) == 1) {
-                                    data[data_len++] = (uint8_t)val;
+                                int token_len = strlen(token);
+                                for (int i = 0; i < token_len && data_len < 256; i++) {
+                                    data[data_len++] = token[i];
                                 }
                                 token = strtok(NULL, " ");
                             }
@@ -409,7 +409,7 @@ int main(int argc, char *argv[]) {
                             if (data_len > 0) {
                                 printf("Sending to device %02X: ", device_addr);
                                 for (int i = 0; i < data_len; i++) {
-                                    printf("%02X ", data[i]);
+                                    printf("%c", data[i]);
                                 }
                                 printf("\n");
 
@@ -431,9 +431,9 @@ int main(int argc, char *argv[]) {
                     int data_len = 0;
                     char* token = strtok(rest, " ");
                     while (token && data_len < 256) {
-                        unsigned int val;
-                        if (sscanf(token, "%x", &val) == 1) {
-                            data[data_len++] = (uint8_t)val;
+                        int token_len = strlen(token);
+                        for (int i = 0; i < token_len && data_len < 256; i++) {
+                            data[data_len++] = token[i];
                         }
                         token = strtok(NULL, " ");
                     }
@@ -441,7 +441,7 @@ int main(int argc, char *argv[]) {
                     if (data_len > 0) {
                         printf("Sending reply to device %02X, packet ID %d: ", g_last_source_address, g_last_packet_id);
                         for (int i = 0; i < data_len; i++) {
-                            printf("%02X ", data[i]);
+                            printf("%c", data[i]);
                         }
                         printf("\n");
 
