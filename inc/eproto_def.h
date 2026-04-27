@@ -30,6 +30,11 @@
 
 #include "eproto_config.h"
 
+// 最大并发发送包数量，默认值为 4
+#ifndef EPROTO_MAX_CONCURRENT_SENDS
+#define EPROTO_MAX_CONCURRENT_SENDS 4
+#endif
+
 // 握手功能配置检查
 #ifndef EPROTO_ENABLE_HANDSHAKE
 #define EPROTO_ENABLE_HANDSHAKE 1  // 默认启用握手功能

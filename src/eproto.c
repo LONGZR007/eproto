@@ -104,8 +104,8 @@ eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_funct
 #ifdef EPROTO_ENABLE_HANDSHAKE
         eproto->bus_managers[i].handshake_required = 0;
 #endif
-        // 初始化当前发送节点链表
-        EPROTO_INIT_LIST_HEAD(&eproto->bus_managers[i].current_send_nodes);
+        // 初始化正在发送的节点队列
+        EPROTO_INIT_LIST_HEAD(&eproto->bus_managers[i].device_queues.sending_queue);
         // 初始化目标设备地址数组
         eproto->bus_managers[i].destination_device_count = 0;
 
@@ -650,9 +650,9 @@ static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager
 static void eproto_process_protocol_ack_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame) {
     EPROTO_INFO_LOG("%s: Received protocol ACK\n", EPROTO_BUS_NAME(bus_mgr));
 
-    // 遍历当前发送节点链表，查找匹配的包ID
+    // 遍历正在发送的节点队列，查找匹配的包ID
     struct eproto_list_head* pos, *n;
-    eproto_list_for_each_safe(pos, n, &bus_mgr->current_send_nodes) {
+    eproto_list_for_each_safe(pos, n, &bus_mgr->device_queues.sending_queue) {
         eproto_node_t* node = eproto_list_entry(pos, eproto_node_t, list);
         if (node->packet_id == frame->packet_id) {
             EPROTO_INFO_LOG("%s: It's an ACK for current sending packet %d\n", EPROTO_BUS_NAME(bus_mgr),
@@ -767,9 +767,9 @@ static void eproto_process_parse_error(eproto_bus_manager_t* bus_mgr, eproto_fra
 static void eproto_handle_retransmit(eproto_t* eproto, eproto_bus_manager_t* bus_mgr) {
     uint32_t current_time = eproto->user_functions.get_timestamp();
 
-    // 遍历当前发送节点链表
+    // 遍历正在发送的节点队列
     struct eproto_list_head* pos, *n;
-    eproto_list_for_each_safe(pos, n, &bus_mgr->current_send_nodes) {
+    eproto_list_for_each_safe(pos, n, &bus_mgr->device_queues.sending_queue) {
         eproto_node_t* node = eproto_list_entry(pos, eproto_node_t, list);
 
         // 检查是否需要重发
@@ -864,8 +864,8 @@ static void eproto_send_normal_packet(eproto_t* eproto, eproto_bus_manager_t* bu
     // 如果重发次数和超时时间都是0，不需要添加到发送节点链表
     // 因为不需要进行重发和超时检查
     if (send_node->max_retry_count > 0 || send_node->timeout_ms > 0) {
-        // 添加到当前发送节点链表
-        eproto_packet_node_add(&bus_mgr->current_send_nodes, send_node);
+        // 添加到正在发送的节点队列
+        eproto_packet_node_add(&bus_mgr->device_queues.sending_queue, send_node);
     } else {
         // 不需要重发和超时检查，直接释放节点
         eproto_packet_node_destroy(eproto->user_functions.free, send_node);
@@ -903,7 +903,7 @@ static void eproto_process_send_queue(eproto_t* eproto) {
             // 检查发送队列
             queue_is_empty = (&bus_mgr->device_queues.send_queue == bus_mgr->device_queues.send_queue.next);
             // 检查当前发送节点数量
-            current_send_count = eproto_packet_node_get_length(&bus_mgr->current_send_nodes);
+            current_send_count = eproto_packet_node_get_length(&bus_mgr->device_queues.sending_queue);
 
             if (eproto->user_functions.unlock) {
                 eproto->user_functions.unlock();
@@ -1017,8 +1017,8 @@ static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t*
         handshake_node->timestamp = eproto->user_functions.get_timestamp();
         handshake_node->retry_count = 0;
 
-        // 添加到当前发送节点链表
-        eproto_packet_node_add(&bus_mgr->current_send_nodes, handshake_node);
+        // 添加到正在发送的节点队列
+        eproto_packet_node_add(&bus_mgr->device_queues.sending_queue, handshake_node);
     } else {
         // 发送失败，销毁握手节点
         EPROTO_ERROR_LOG("%s: Failed to send handshake packet\n", EPROTO_BUS_NAME(bus_mgr));
@@ -1329,9 +1329,9 @@ static uint32_t eproto_find_min_timeout_timestamp(eproto_t* eproto) {
             continue;
 
 
-        // 检查当前发送节点链表（普通包）
+        // 检查正在发送的节点队列
         struct eproto_list_head* pos;
-        eproto_list_for_each(pos, &bus_mgr->current_send_nodes) {
+        eproto_list_for_each(pos, &bus_mgr->device_queues.sending_queue) {
             eproto_node_t* node = eproto_list_entry(pos, eproto_node_t, list);
             uint32_t node_timeout = node->timestamp + node->timeout_ms;
             if (node_timeout < min_timeout_timestamp) {
