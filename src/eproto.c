@@ -104,7 +104,6 @@ eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_funct
 #ifdef EPROTO_ENABLE_HANDSHAKE
         eproto->bus_managers[i].handshake_required = 0;
 #endif
-        eproto->bus_managers[i].current_send_node = NULL;
         // 初始化当前发送节点链表
         EPROTO_INIT_LIST_HEAD(&eproto->bus_managers[i].current_send_nodes);
         // 初始化目标设备地址数组
@@ -765,70 +764,8 @@ static void eproto_process_parse_error(eproto_bus_manager_t* bus_mgr, eproto_fra
 // ====================================
 
 // 处理重发逻辑
-static bool eproto_handle_retransmit(eproto_t* eproto, eproto_bus_manager_t* bus_mgr) {
+static void eproto_handle_retransmit(eproto_t* eproto, eproto_bus_manager_t* bus_mgr) {
     uint32_t current_time = eproto->user_functions.get_timestamp();
-    bool need_continue = false;
-
-    // 处理握手包（仍然使用 current_send_node）
-#ifdef EPROTO_ENABLE_HANDSHAKE
-    if (bus_mgr->current_send_node) {
-        // 检查是否需要重发
-        if (current_time - bus_mgr->current_send_node->timestamp > bus_mgr->current_send_node->timeout_ms) {
-            if (bus_mgr->current_send_node->retry_count < bus_mgr->current_send_node->max_retry_count) {
-                // 重发
-                EPROTO_INFO_LOG("%s: Retrying handshake packet %d, retry count: %d\n", EPROTO_BUS_NAME(bus_mgr),
-                                bus_mgr->current_send_node->packet_id, bus_mgr->current_send_node->retry_count);
-                // 重发时添加重发标志
-                uint8_t retransmit_packet_type =
-                    bus_mgr->current_send_node->packet_type | EPROTO_PACKET_TYPE_RETRANSMIT_FLAG;
-                eproto_send_frame(eproto, bus_mgr, bus_mgr->current_send_node->src_addr,
-                                  bus_mgr->current_send_node->dst_addr, bus_mgr->current_send_node->packet_id,
-                                  bus_mgr->current_send_node->data, bus_mgr->current_send_node->data_length,
-                                  retransmit_packet_type);
-                bus_mgr->current_send_node->timestamp = current_time;
-                bus_mgr->current_send_node->retry_count++;
-                need_continue = true;  // 需要继续处理其他总线
-            } else {
-                // 达到最大重发次数，调用回调并移除
-                EPROTO_WARNING_LOG("%s: Max retry reached for handshake packet %d\n", EPROTO_BUS_NAME(bus_mgr),
-                                   bus_mgr->current_send_node->packet_id);
-
-                // 保存当前节点的包类型
-                uint8_t packet_type = bus_mgr->current_send_node->packet_type;
-
-                if (bus_mgr->current_send_node->callback) {
-                    bus_mgr->current_send_node->callback(EPROTO_SEND_TIMEOUT, bus_mgr->current_send_node->packet_id, NULL,
-                                                         0, bus_mgr->current_send_node->private_data);
-                }
-                eproto_packet_node_destroy(eproto->user_functions.free, bus_mgr->current_send_node);
-                bus_mgr->current_send_node = NULL;
-
-                // 只有当当前节点是握手包时，才处理发送队列中的节点
-                if (packet_type & EPROTO_PACKET_TYPE_HANDSHAKE_FLAG) {
-                    // 检查发送队列是否不为空
-                    if (!eproto_list_empty(&bus_mgr->device_queues.send_queue)) {
-                        // 取出第一个节点
-                        eproto_node_t* send_node = eproto_packet_node_remove_first(&bus_mgr->device_queues.send_queue);
-                        if (send_node) {
-                            // 调用回调告诉用户发送超时
-                            if (send_node->callback) {
-                                send_node->callback(EPROTO_SEND_TIMEOUT, send_node->packet_id, NULL, 0,
-                                                    send_node->private_data);
-                            }
-                            // 销毁取出来的节点
-                            eproto_packet_node_destroy(eproto->user_functions.free, send_node);
-                        }
-                    }
-                }
-
-                return false;  // 继续处理该总线
-            }
-        } else {
-            // 当前有发送节点且未超时，继续处理其他总线管理器
-            return true;
-        }
-    }
-#endif
 
     // 遍历当前发送节点链表
     struct eproto_list_head* pos, *n;
@@ -850,7 +787,6 @@ static bool eproto_handle_retransmit(eproto_t* eproto, eproto_bus_manager_t* bus
                                   retransmit_packet_type);
                 node->timestamp = current_time;
                 node->retry_count++;
-                need_continue = true;  // 需要继续处理其他总线
             } else {
                 // 达到最大重发次数，调用回调并移除
                 EPROTO_WARNING_LOG("%s: Max retry reached for packet %d\n", EPROTO_BUS_NAME(bus_mgr),
@@ -886,13 +822,8 @@ static bool eproto_handle_retransmit(eproto_t* eproto, eproto_bus_manager_t* bus
                     }
                 }
             }
-        } else {
-            // 当前节点未超时，继续处理其他节点
-            need_continue = true;
         }
     }
-
-    return need_continue;
 }
 
 // 发送普通数据包
@@ -1083,8 +1014,8 @@ static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t*
         handshake_node->timestamp = eproto->user_functions.get_timestamp();
         handshake_node->retry_count = 0;
 
-        // 设置为当前发送节点
-        bus_mgr->current_send_node = handshake_node;
+        // 添加到当前发送节点链表
+        eproto_packet_node_add(&bus_mgr->current_send_nodes, handshake_node);
     } else {
         // 发送失败，销毁握手节点
         EPROTO_ERROR_LOG("%s: Failed to send handshake packet\n", EPROTO_BUS_NAME(bus_mgr));
@@ -1394,13 +1325,7 @@ static uint32_t eproto_find_min_timeout_timestamp(eproto_t* eproto) {
         if (!bus_mgr->bus.send)
             continue;
 
-        // 检查当前发送节点（握手包）
-        if (bus_mgr->current_send_node) {
-            uint32_t node_timeout = bus_mgr->current_send_node->timestamp + bus_mgr->current_send_node->timeout_ms;
-            if (node_timeout < min_timeout_timestamp) {
-                min_timeout_timestamp = node_timeout;
-            }
-        }
+
         // 检查当前发送节点链表（普通包）
         struct eproto_list_head* pos;
         eproto_list_for_each(pos, &bus_mgr->current_send_nodes) {

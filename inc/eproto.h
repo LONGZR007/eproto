@@ -151,7 +151,6 @@ typedef struct {
     uint16_t last_ids[EPROTO_MAX_CONCURRENT_SENDS];  // 上次处理的包ID，用于重发包检测
     uint8_t crc_error_count;
     struct eproto_list_head current_send_nodes;  // 当前正在发送的节点链表
-    eproto_node_t* current_send_node;  // 当前正在发送的握手包节点（仅用于握手包）
 #ifdef EPROTO_ENABLE_HANDSHAKE
     // 握手相关
     uint8_t handshake_required;  // 握手标志
