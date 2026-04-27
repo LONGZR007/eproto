@@ -45,7 +45,7 @@ static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager
 static void eproto_process_protocol_ack_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame);
 static void eproto_process_user_reply_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame);
 static void eproto_process_parse_error(eproto_bus_manager_t* bus_mgr, eproto_frame_parser_error_t error);
-static bool eproto_handle_retransmit(eproto_t* eproto, eproto_bus_manager_t* bus_mgr);
+static void eproto_handle_retransmit(eproto_t* eproto, eproto_bus_manager_t* bus_mgr);
 static void eproto_send_normal_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr);
 static void eproto_process_send_queue(eproto_t* eproto);
 static void eproto_process_wait_queue(eproto_t* eproto);
@@ -891,40 +891,43 @@ static void eproto_process_send_queue(eproto_t* eproto) {
         // 优先处理重发
         eproto_handle_retransmit(eproto, bus_mgr);
 
-        // 加锁保护发送队列检查
-        int queue_is_empty = 1;
-        uint8_t current_send_count = 0;
-        if (eproto->user_functions.lock) {
-            eproto->user_functions.lock();
-        }
-
-        // 检查发送队列
-        queue_is_empty = (&bus_mgr->device_queues.send_queue == bus_mgr->device_queues.send_queue.next);
-        // 检查当前发送节点数量
-        current_send_count = eproto_packet_node_get_length(&bus_mgr->current_send_nodes);
-
-        if (eproto->user_functions.unlock) {
-            eproto->user_functions.unlock();
-        }
-
-        if (queue_is_empty)
-            continue;
-
-        // 检查当前发送节点数量是否达到最大值
-        if (current_send_count >= EPROTO_MAX_CONCURRENT_SENDS)
-            continue;
-
-            // 检查是否需要握手
-#ifdef EPROTO_ENABLE_HANDSHAKE
-        if (bus_mgr->handshake_required) {
-            if (eproto_send_handshake_packet(eproto, bus_mgr)) {
-                continue;  // 发送握手包后继续处理其他总线管理器
+        // 循环发送多个包，直到发送队列为空或当前发送节点数量达到最大值
+        while (1) {
+            // 加锁保护发送队列检查
+            int queue_is_empty = 1;
+            uint8_t current_send_count = 0;
+            if (eproto->user_functions.lock) {
+                eproto->user_functions.lock();
             }
-        }
+
+            // 检查发送队列
+            queue_is_empty = (&bus_mgr->device_queues.send_queue == bus_mgr->device_queues.send_queue.next);
+            // 检查当前发送节点数量
+            current_send_count = eproto_packet_node_get_length(&bus_mgr->current_send_nodes);
+
+            if (eproto->user_functions.unlock) {
+                eproto->user_functions.unlock();
+            }
+
+            if (queue_is_empty)
+                break;  // 发送队列为空，结束循环
+
+            // 检查当前发送节点数量是否达到最大值
+            if (current_send_count >= EPROTO_MAX_CONCURRENT_SENDS)
+                break;  // 当前发送节点数量达到最大值，结束循环
+
+                // 检查是否需要握手
+#ifdef EPROTO_ENABLE_HANDSHAKE
+            if (bus_mgr->handshake_required) {
+                if (eproto_send_handshake_packet(eproto, bus_mgr)) {
+                    break;  // 发送握手包后结束当前循环
+                }
+            }
 #endif
 
-        // 发送普通数据包
-        eproto_send_normal_packet(eproto, bus_mgr);
+            // 发送普通数据包
+            eproto_send_normal_packet(eproto, bus_mgr);
+        }
     }
 }
 
