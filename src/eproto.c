@@ -95,11 +95,10 @@ eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_funct
 
 
         // 初始化状态变量
+        eproto->bus_managers[i].next_packet_id = 1;
         for (uint8_t j = 0; j < EPROTO_MAX_CONCURRENT_SENDS; j++) {
-            eproto->bus_managers[i].next_packet_id[j] = 1;
             eproto->bus_managers[i].last_ids[j] = 0;
         }
-        eproto->bus_managers[i].next_packet_id_index = 0;
         eproto->bus_managers[i].last_id_index = 0;
         eproto->bus_managers[i].crc_error_count = 0;
 #ifdef EPROTO_ENABLE_HANDSHAKE
@@ -319,12 +318,9 @@ static eproto_error_t eproto_handle_broadcast(eproto_t* eproto, uint8_t* data, u
         has_active_bus = true;
 
         // 生成用户包的包ID
-        uint8_t index = bus_mgr->next_packet_id_index;
-        uint16_t packet_id = bus_mgr->next_packet_id[index];
-        bus_mgr->next_packet_id[index]++;
-        if (bus_mgr->next_packet_id[index] == 0)
-            bus_mgr->next_packet_id[index] = 1;  // 避免0值
-        bus_mgr->next_packet_id_index = (bus_mgr->next_packet_id_index + 1) % EPROTO_MAX_CONCURRENT_SENDS;
+        uint16_t packet_id = bus_mgr->next_packet_id++;
+        if (bus_mgr->next_packet_id == 0)
+            bus_mgr->next_packet_id = 1;  // 避免0值
 
         // 创建广播包节点，重发次数和超时时间强制为0
         eproto_node_t* node = eproto_packet_node_create(
@@ -380,12 +376,9 @@ eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t dst_addr, uint8_t* data,
         return EPROTO_ERROR_ROUTE_NOT_FOUND;
 
     // 生成用户包的包ID
-    uint8_t index = bus_mgr->next_packet_id_index;
-    uint16_t packet_id = bus_mgr->next_packet_id[index];
-    bus_mgr->next_packet_id[index]++;
-    if (bus_mgr->next_packet_id[index] == 0)
-        bus_mgr->next_packet_id[index] = 1;  // 避免0值
-    bus_mgr->next_packet_id_index = (bus_mgr->next_packet_id_index + 1) % EPROTO_MAX_CONCURRENT_SENDS;
+    uint16_t packet_id = bus_mgr->next_packet_id++;
+    if (bus_mgr->next_packet_id == 0)
+        bus_mgr->next_packet_id = 1;  // 避免0值
 
     // 创建用户包节点
     eproto_node_t* node = eproto_packet_node_create(
@@ -991,12 +984,9 @@ static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t*
     }
 
     // 生成握手包的包ID
-    uint8_t index = bus_mgr->next_packet_id_index;
-    uint16_t handshake_packet_id = bus_mgr->next_packet_id[index];
-    bus_mgr->next_packet_id[index]++;
-    if (bus_mgr->next_packet_id[index] == 0)
-        bus_mgr->next_packet_id[index] = 1;  // 避免0值
-    bus_mgr->next_packet_id_index = (bus_mgr->next_packet_id_index + 1) % EPROTO_MAX_CONCURRENT_SENDS;
+    uint16_t handshake_packet_id = bus_mgr->next_packet_id++;
+    if (bus_mgr->next_packet_id == 0)
+        bus_mgr->next_packet_id = 1;  // 避免0值
 
     // 创建握手包节点（使用握手标志）
     uint8_t handshake_packet_type = EPROTO_PACKET_TYPE_USER_SEND | EPROTO_PACKET_TYPE_HANDSHAKE_FLAG;
@@ -1047,12 +1037,9 @@ eproto_error_t eproto_handshake(eproto_t* eproto, uint8_t bus_addr) {
     }
 
     // 生成握手包的包ID
-    uint8_t index = bus_mgr->next_packet_id_index;
-    uint16_t handshake_packet_id = bus_mgr->next_packet_id[index];
-    bus_mgr->next_packet_id[index]++;
-    if (bus_mgr->next_packet_id[index] == 0)
-        bus_mgr->next_packet_id[index] = 1;  // 避免0值
-    bus_mgr->next_packet_id_index = (bus_mgr->next_packet_id_index + 1) % EPROTO_MAX_CONCURRENT_SENDS;
+    uint16_t handshake_packet_id = bus_mgr->next_packet_id++;
+    if (bus_mgr->next_packet_id == 0)
+        bus_mgr->next_packet_id = 1;  // 避免0值
 
     // 创建握手包节点（使用握手标志）
     uint8_t handshake_packet_type = EPROTO_PACKET_TYPE_USER_SEND | EPROTO_PACKET_TYPE_HANDSHAKE_FLAG;
