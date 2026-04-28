@@ -145,6 +145,7 @@ typedef struct {
     uint16_t next_packet_id[EPROTO_MAX_CONCURRENT_SENDS];
     uint8_t next_packet_id_index;  // next_packet_id 数组的当前索引
     uint16_t last_ids[EPROTO_MAX_CONCURRENT_SENDS];  // 上次处理的包ID，用于重发包检测
+    uint8_t last_id_index;  // last_ids 数组的当前索引
     uint8_t crc_error_count;
 #ifdef EPROTO_ENABLE_HANDSHAKE
     // 握手相关

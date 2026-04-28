@@ -100,6 +100,7 @@ eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_funct
             eproto->bus_managers[i].last_ids[j] = 0;
         }
         eproto->bus_managers[i].next_packet_id_index = 0;
+        eproto->bus_managers[i].last_id_index = 0;
         eproto->bus_managers[i].crc_error_count = 0;
 #ifdef EPROTO_ENABLE_HANDSHAKE
         eproto->bus_managers[i].handshake_required = 0;
@@ -640,9 +641,8 @@ static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager
         EPROTO_DEBUG_LOG("%s: Calling receive callback\n", EPROTO_BUS_NAME(bus_mgr));
         bus_mgr->bus.receive_callback(&bus_mgr->bus, frame->src_addr, frame->packet_id, frame->data, frame->length);
         // 循环更新上次处理的包ID数组，实现循环覆盖
-        static uint8_t last_id_index = 0;
-        bus_mgr->last_ids[last_id_index] = frame->packet_id;
-        last_id_index = (last_id_index + 1) % EPROTO_MAX_CONCURRENT_SENDS;
+        bus_mgr->last_ids[bus_mgr->last_id_index] = frame->packet_id;
+        bus_mgr->last_id_index = (bus_mgr->last_id_index + 1) % EPROTO_MAX_CONCURRENT_SENDS;
     }
 }
 
