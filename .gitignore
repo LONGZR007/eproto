@@ -16,4 +16,11 @@ build/
 push_to_gitee.py
 .trae/
 bin/
+# Cross compiler
+gcc-linaro-*
+*.tar.xz
+*.tar.gz
+arm-build/
+x86-build/
+bin-arm/
 
