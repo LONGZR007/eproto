@@ -22,4 +22,5 @@ gcc-linaro-*
 *.tar.gz
 arm-build/
 x86-build/
+bin-arm/
 
