@@ -59,6 +59,9 @@
 // 超时时间计算系数
 #define EPROTO_TIMEOUT_FACTOR 1.5
 
+// 最大并发发送包数量
+#define EPROTO_MAX_CONCURRENT_SENDS 4
+
 // 日志打印接口示例（由用户实现）
 // #define EPROTO_DEBUG_LOG(fmt, ...) printf(fmt, ##__VA_ARGS__)
 // #define EPROTO_INFO_LOG(fmt, ...) printf(fmt, ##__VA_ARGS__)

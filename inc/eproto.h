@@ -26,6 +26,7 @@
 #define EPROTO_H
 
 #include <stdint.h>
+
 #include "eproto_config.h"
 #include "eproto_def.h"
 #include "eproto_ring_buffer.h"
@@ -108,6 +109,7 @@ typedef struct eproto_bus_t {
 typedef struct {
     struct eproto_list_head send_queue;  // 发送队列
     struct eproto_list_head wait_queue;  // 等待应答队列
+    struct eproto_list_head sending_queue;  // 正在发送的节点队列
 } eproto_device_queues_t;
 
 // 用户接口结构体
@@ -140,10 +142,10 @@ typedef struct {
     eproto_frame_parser_t parser;
 
     // 状态变量
-    uint16_t next_packet_id;
-    uint16_t last_id;  // 上次处理的包ID，用于重发包检测
+    uint16_t next_packet_id;  // 下一个包ID，所有包共用
+    uint16_t last_ids[EPROTO_MAX_CONCURRENT_SENDS];  // 上次处理的包ID，用于重发包检测
+    uint8_t last_id_index;  // last_ids 数组的当前索引
     uint8_t crc_error_count;
-    eproto_node_t* current_send_node;  // 当前正在发送的节点
 #ifdef EPROTO_ENABLE_HANDSHAKE
     // 握手相关
     uint8_t handshake_required;  // 握手标志
