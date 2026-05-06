@@ -42,8 +42,6 @@
 #define EPROTO_HANDSHAKE_MAX_RETRY_COUNT 3  // 握手最大重发次数
 #define EPROTO_HANDSHAKE_TIMEOUT_MS 1000    // 握手超时时间（毫秒）
 
-// 环形缓冲区大小 - 由用户在初始化时提供
-
 // 发送队列最大长度
 #define EPROTO_MAX_SEND_QUEUE_SIZE 16
 
@@ -56,11 +54,8 @@
 // 单个总线下最多支持的目标设备数量
 #define EPROTO_MAX_DESTINATION_DEVICES 16
 
-// 超时时间计算系数
-#define EPROTO_TIMEOUT_FACTOR 1.5
-
 // 最大并发发送包数量
-#define EPROTO_MAX_CONCURRENT_SENDS 4
+#define EPROTO_MAX_CONCURRENT_SENDS 1
 
 // 日志打印接口示例（由用户实现）
 // #define EPROTO_DEBUG_LOG(fmt, ...) printf(fmt, ##__VA_ARGS__)
