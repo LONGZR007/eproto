@@ -35,7 +35,7 @@
 
 // 重发配置
 #define EPROTO_DEFAULT_MAX_RETRY_COUNT 3     // 默认最大重发次数
-#define EPROTO_DEFAULT_RETRY_TIMEOUT_MS 100  // 默认超时时间
+#define EPROTO_DEFAULT_RETRY_TIMEOUT_MS 10000  // 默认超时时间
 
 // 握手配置
 #define EPROTO_HANDSHAKE_MAX_RETRY_COUNT 3  // 握手最大重发次数
