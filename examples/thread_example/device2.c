@@ -112,7 +112,7 @@ void* device2_receive_thread(void* arg) {
     g_current_thread_data = data;
 
     // 定期接收数据
-    for (int i = 0; i < 50; i++) {
+    while (1) {
         // 模拟从第一条总线接收数据（总线2，连接到设备1）
         uint8_t rx_buffer1[256];
         uint16_t rx_count1 = device2_bus_receive(rx_buffer1, sizeof(rx_buffer1));
@@ -128,7 +128,7 @@ void* device2_receive_thread(void* arg) {
             // 使用设备2自己的总线3地址0x03
             eproto_receive_data(&data->eproto_inst, 0x03, rx_buffer2, rx_count2);
         }
-        usleep(1000);
+        usleep(10000);
     }
 
     printf("%s receive thread finished\n", data->device_name);
@@ -144,9 +144,9 @@ void* device2_process_thread(void* arg) {
     g_current_thread_data = data;
 
     // 定期处理协议
-    for (int i = 0; i < 50; i++) {
+    while (1) {
         eproto_process(&data->eproto_inst);
-        usleep(1000);
+        usleep(10000);
     }
 
     // 注意：不要在这里销毁eProto，因为data是device2_data的副本

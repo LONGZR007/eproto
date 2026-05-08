@@ -38,7 +38,7 @@ void device1_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_
 
     // 回复接收到的数据
     printf("Device 1: Sending reply...\n");
-    eproto_error_t error = eproto_send_user_reply(g_device1_eproto, 0x01, packet_id, data, length);
+    eproto_error_t error = eproto_send_user_reply(g_device1_eproto, source_address, packet_id, data, length);
     if (error != EPROTO_OK) {
         printf("Device 1: Failed to send reply\n");
     } else {
@@ -126,7 +126,7 @@ void* device1_receive_thread(void* arg) {
     g_current_thread_data = data;
 
     // 定期接收数据
-    for (int i = 0; i < 50; i++) {
+    while (1) {
         // 模拟从总线接收数据
         uint8_t rx_buffer[256];
         uint16_t rx_count = device1_bus_receive(rx_buffer, sizeof(rx_buffer));
@@ -134,7 +134,7 @@ void* device1_receive_thread(void* arg) {
             // 使用设备1自己的总线地址0x01
             eproto_receive_data(&data->eproto_inst, 0x01, rx_buffer, rx_count);
         }
-        usleep(1000);
+        usleep(10000);
     }
 
     printf("%s receive thread finished\n", data->device_name);
@@ -202,9 +202,9 @@ void* device1_process_thread(void* arg) {
     printf("%s: Broadcast data sent successfully\n", data->device_name);
 
     // 定期处理协议
-    for (int i = 0; i < 50; i++) {
+    while (1) {
         eproto_process(&data->eproto_inst);
-        usleep(1000);
+        usleep(10000);
     }
 
     // 注意：不要在这里销毁eProto，因为data是device1_data的副本
