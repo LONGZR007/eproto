@@ -180,7 +180,7 @@ void* device1_process_thread(void* arg) {
             printf("%02X ", wrapped_data[i]);
         }
         printf("\n");
-        eproto_error_t error = eproto_send(&data->eproto_inst, 0x02, wrapped_data, wrapped_length, device1_send_callback, data, 0);
+        eproto_error_t error = eproto_send(&data->eproto_inst, 0x02, wrapped_data, wrapped_length, device1_send_callback, data, 1);
         free(wrapped_data);
         if (error != EPROTO_OK) {
             printf("%s: Failed to send data\n", data->device_name);
