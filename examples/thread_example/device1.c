@@ -134,7 +134,7 @@ void* device1_receive_thread(void* arg) {
             // 使用设备1自己的总线地址0x01
             eproto_receive_data(&data->eproto_inst, 0x01, rx_buffer, rx_count);
         }
-        usleep(50000);
+        usleep(1000);
     }
 
     printf("%s receive thread finished\n", data->device_name);
@@ -150,7 +150,7 @@ void* device1_process_thread(void* arg) {
     g_current_thread_data = data;
 
     // 等待设备2初始化
-    usleep(100000);
+    usleep(1000);
 
     // 发送需要回复的测试数据（need_reply=1）到设备2的总线2
     uint8_t test_data[] = {0x11, 0x22, 0x33, 0x44, 0x55};
@@ -189,7 +189,7 @@ void* device1_process_thread(void* arg) {
     printf("%s: Data sent to device 3 successfully\n", data->device_name);
 
     // 等待一段时间，确保前面的数据包处理完成
-    usleep(100000);
+    usleep(1000);
 
     // 发送广播数据
     uint8_t broadcast_data[] = {0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
@@ -204,7 +204,7 @@ void* device1_process_thread(void* arg) {
     // 定期处理协议
     for (int i = 0; i < 50; i++) {
         eproto_process(&data->eproto_inst);
-        usleep(50000);
+        usleep(1000);
     }
 
     // 注意：不要在这里销毁eProto，因为data是device1_data的副本

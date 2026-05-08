@@ -134,7 +134,7 @@ void* device3_receive_thread(void* arg) {
             // 使用设备3自己的总线4地址0x04
             eproto_receive_data(&data->eproto_inst, 0x04, rx_buffer, rx_count);
         }
-        usleep(50000);
+        usleep(1000);
     }
 
     printf("%s receive thread finished\n", data->device_name);
@@ -152,7 +152,7 @@ void* device3_process_thread(void* arg) {
     // 定期处理协议
     for (int i = 0; i < 50; i++) {
         eproto_process(&data->eproto_inst);
-        usleep(50000);
+        usleep(1000);
     }
 
     // 注意：不要在这里销毁eProto，因为data是device3_data的副本
