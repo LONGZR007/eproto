@@ -88,6 +88,35 @@ void mock_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* da
     printf("Status callback: status = %d\n", status);
 }
 
+// 协议包装函数：在数据前添加2字节协议头
+uint8_t* protocol_wrap(uint8_t encrypted, uint8_t need_reply, const uint8_t* data, uint16_t length, uint16_t* out_length) {
+    uint16_t total_length = PROTOCOL_HEADER_SIZE + length;
+    uint8_t* wrapped = (uint8_t*)malloc(total_length);
+    if (!wrapped) {
+        *out_length = 0;
+        return NULL;
+    }
+    wrapped[0] = encrypted ? PROTOCOL_FLAG_ENCRYPTED : 0;
+    wrapped[1] = need_reply ? PROTOCOL_FLAG_NEED_REPLY : 0;
+    if (data && length > 0) {
+        memcpy(wrapped + PROTOCOL_HEADER_SIZE, data, length);
+    }
+    *out_length = total_length;
+    return wrapped;
+}
+
+// 协议解包函数：从数据中解析协议头
+uint8_t* protocol_unwrap(const uint8_t* data, uint16_t length, uint8_t* out_encrypted, uint8_t* out_need_reply, uint16_t* out_data_length) {
+    if (length < PROTOCOL_HEADER_SIZE) {
+        *out_data_length = 0;
+        return NULL;
+    }
+    *out_encrypted = (data[0] & PROTOCOL_FLAG_ENCRYPTED) ? 1 : 0;
+    *out_need_reply = (data[1] & PROTOCOL_FLAG_NEED_REPLY) ? 1 : 0;
+    *out_data_length = length - PROTOCOL_HEADER_SIZE;
+    return (uint8_t*)(data + PROTOCOL_HEADER_SIZE);
+}
+
 // 设备1的总线发送函数（写入共享缓冲区1）
 void device1_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
     (void)bus;

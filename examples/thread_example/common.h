@@ -37,6 +37,11 @@
 // 共享缓冲区用于模拟总线通信
 #define SHARED_BUFFER_SIZE 1024
 
+// 上层协议头部定义
+#define PROTOCOL_HEADER_SIZE 2
+#define PROTOCOL_FLAG_ENCRYPTED   0x80
+#define PROTOCOL_FLAG_NEED_REPLY  0x01
+
 // 线程类型枚举
 typedef enum {
     THREAD_TYPE_RECEIVE,  // 接收线程
@@ -56,6 +61,7 @@ typedef struct {
     int signal_flag;            // 信号标志，用于模拟裸机情况
     uint8_t rx_buffer[256];     // 接收缓冲区1
     uint8_t rx_buffer2[256];    // 接收缓冲区2（用于第二条总线）
+    uint8_t need_reply_flag;    // 当前发送数据是否需要回复的标志
 } thread_data_t;
 
 // 全局变量声明
@@ -124,6 +130,16 @@ void mock_wakeup(void);
 
 // 模拟状态回调函数
 void mock_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length);
+
+// 协议包装函数：在数据前添加2字节协议头
+// encrypted: 加密标志（保留不使用）
+// need_reply: 是否需要回复
+// 返回包装后的数据（调用者负责释放内存）
+uint8_t* protocol_wrap(uint8_t encrypted, uint8_t need_reply, const uint8_t* data, uint16_t length, uint16_t* out_length);
+
+// 协议解包函数：从数据中解析协议头
+// 返回有效数据的起始位置和长度
+uint8_t* protocol_unwrap(const uint8_t* data, uint16_t length, uint8_t* out_encrypted, uint8_t* out_need_reply, uint16_t* out_data_length);
 
 // 设备1接收回调函数
 void device1_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);

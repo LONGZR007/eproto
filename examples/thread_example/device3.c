@@ -30,19 +30,36 @@ eproto_t* g_device3_eproto = NULL;
 // 设备3接收回调函数
 void device3_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
     (void)bus;
+    uint8_t encrypted = 0;
+    uint8_t need_reply = 0;
+    uint16_t payload_length = 0;
+    uint8_t* payload = protocol_unwrap(data, length, &encrypted, &need_reply, &payload_length);
+
     printf("Device 3 received data from device 0x%02X, packet ID: %d: ", source_address, packet_id);
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
     }
     printf("\n");
 
-    // 回复接收到的数据
-    printf("Device 3: Sending reply...\n");
-    eproto_error_t error = eproto_send_user_reply(g_device3_eproto, source_address, packet_id, data, length);
-    if (error != EPROTO_OK) {
-        printf("Device 3: Failed to send reply\n");
-    } else {
-        printf("Device 3: Reply sent successfully\n");
+    if (payload && payload_length > 0 && need_reply) {
+        printf("Device 3: Protocol header - encrypted=%d, need_reply=%d\n", encrypted, need_reply);
+        printf("Device 3: Sending reply with payload: ");
+        for (uint16_t i = 0; i < payload_length; i++) {
+            printf("%02X ", payload[i]);
+        }
+        printf("\n");
+        uint8_t* reply_data = NULL;
+        uint16_t reply_length = 0;
+        reply_data = protocol_wrap(0, 0, payload, payload_length, &reply_length);
+        if (reply_data) {
+            eproto_error_t error = eproto_send_user_reply(g_device3_eproto, source_address, packet_id, reply_data, reply_length);
+            if (error != EPROTO_OK) {
+                printf("Device 3: Failed to send reply\n");
+            } else {
+                printf("Device 3: Reply sent successfully\n");
+            }
+            free(reply_data);
+        }
     }
 }
 
