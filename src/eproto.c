@@ -101,7 +101,7 @@ eproto_error_t eproto_init(eproto_t* eproto, eproto_user_functions_t* user_funct
         }
         eproto->bus_managers[i].last_id_index = 0;
         eproto->bus_managers[i].crc_error_count = 0;
-#ifdef EPROTO_ENABLE_HANDSHAKE
+#if EPROTO_ENABLE_HANDSHAKE
         eproto->bus_managers[i].handshake_required = 0;
 #endif
         // 初始化正在发送的节点队列
@@ -215,7 +215,7 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, eproto_bus_t* bus) {
     EPROTO_INIT_LIST_HEAD(&eproto->bus_managers[manager_index].device_queues.send_queue);
     EPROTO_INIT_LIST_HEAD(&eproto->bus_managers[manager_index].device_queues.wait_queue);
 
-#ifdef EPROTO_ENABLE_HANDSHAKE
+#if EPROTO_ENABLE_HANDSHAKE
     // 初始化总线需要握手
     eproto->bus_managers[manager_index].handshake_required = 1;
     EPROTO_INFO_LOG("%s: Bus initialized with handshake required\n", bus->name);
@@ -260,7 +260,7 @@ eproto_error_t eproto_add_destination_device(eproto_t* eproto, uint8_t self_addr
     return EPROTO_OK;
 }
 
-#ifdef EPROTO_ENABLE_HANDSHAKE
+#if EPROTO_ENABLE_HANDSHAKE
 // 设置总线握手标志
 eproto_error_t eproto_set_handshake(eproto_t* eproto, uint8_t bus_addr, uint8_t required) {
     if (!eproto)
@@ -290,7 +290,7 @@ uint8_t eproto_get_status(eproto_t* eproto, uint8_t bus_addr) {
         return 0;
 
         // 返回是否需要握手
-#ifdef EPROTO_ENABLE_HANDSHAKE
+#if EPROTO_ENABLE_HANDSHAKE
     return bus_mgr->handshake_required;
 #else
     return 0;
@@ -583,7 +583,7 @@ static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager
     EPROTO_INFO_LOG("%s: Received user send packet, sending protocol ACK\n", EPROTO_BUS_NAME(bus_mgr));
     eproto_send_response(eproto, frame->src_addr, frame->packet_id, NULL, 0, EPROTO_PACKET_TYPE_PROTOCOL_ACK);
 
-#ifdef EPROTO_ENABLE_HANDSHAKE
+#if EPROTO_ENABLE_HANDSHAKE
     if (is_handshake) {
         // 处理握手包
         EPROTO_INFO_LOG("%s: Received handshake packet\n", EPROTO_BUS_NAME(bus_mgr));
@@ -652,7 +652,7 @@ static void eproto_process_protocol_ack_packet(eproto_t* eproto, eproto_bus_mana
                             node->packet_id);
 
             // 检查是否是握手包的协议 ACK
-#ifdef EPROTO_ENABLE_HANDSHAKE
+#if EPROTO_ENABLE_HANDSHAKE
             if (node->packet_type & EPROTO_PACKET_TYPE_HANDSHAKE_FLAG) {
                 EPROTO_INFO_LOG("%s: Handshake successful\n", EPROTO_BUS_NAME(bus_mgr));
                 // 清除握手标志（收到协议层应答包清一次）
@@ -689,7 +689,7 @@ static void eproto_process_protocol_ack_packet(eproto_t* eproto, eproto_bus_mana
                     }
                     eproto_packet_node_destroy(eproto->user_functions.free, node);
                 }
-#ifdef EPROTO_ENABLE_HANDSHAKE
+#if EPROTO_ENABLE_HANDSHAKE
             }
 #endif
 
@@ -910,7 +910,7 @@ static void eproto_process_send_queue(eproto_t* eproto) {
                 break;  // 当前发送节点数量达到最大值，结束循环
 
                 // 检查是否需要握手
-#ifdef EPROTO_ENABLE_HANDSHAKE
+#if EPROTO_ENABLE_HANDSHAKE
             if (bus_mgr->handshake_required) {
                 if (eproto_send_handshake_packet(eproto, bus_mgr)) {
                     break;  // 发送握手包后结束当前循环
@@ -966,7 +966,7 @@ static void eproto_process_wait_queue(eproto_t* eproto) {
 // 总线操作 - 握手处理
 // ====================================
 
-#ifdef EPROTO_ENABLE_HANDSHAKE
+#if EPROTO_ENABLE_HANDSHAKE
 // 发送握手包
 static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr) {
     EPROTO_INFO_LOG("%s: Handshake required, sending handshake packet first\n", EPROTO_BUS_NAME(bus_mgr));
@@ -1019,7 +1019,7 @@ static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t*
 }
 #endif
 
-#ifdef EPROTO_ENABLE_HANDSHAKE
+#if EPROTO_ENABLE_HANDSHAKE
 // 执行总线握手
 eproto_error_t eproto_handshake(eproto_t* eproto, uint8_t bus_addr) {
     if (!eproto)

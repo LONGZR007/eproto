@@ -146,7 +146,7 @@ typedef struct {
     uint16_t last_ids[EPROTO_MAX_CONCURRENT_SENDS];  // 上次处理的包ID，用于重发包检测
     uint8_t last_id_index;  // last_ids 数组的当前索引
     uint8_t crc_error_count;
-#ifdef EPROTO_ENABLE_HANDSHAKE
+#if EPROTO_ENABLE_HANDSHAKE
     // 握手相关
     uint8_t handshake_required;  // 握手标志
 #endif
@@ -263,7 +263,7 @@ eproto_error_t eproto_send_ex(eproto_t* eproto, uint8_t dst_addr, uint8_t* data,
 eproto_error_t eproto_send_user_reply_ex(eproto_t* eproto, uint8_t dst_addr, uint16_t packet_id, uint8_t* data,
                                          uint16_t length, uint8_t max_retry_count, uint32_t timeout_ms);
 
-#ifdef EPROTO_ENABLE_HANDSHAKE
+#if EPROTO_ENABLE_HANDSHAKE
 /**
  * 设置总线握手标志
  * @param eproto        指向eProto实例的指针
