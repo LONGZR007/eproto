@@ -335,7 +335,7 @@ void* device1_receive_thread(void* arg) {
         if (rx_count > 0) {
             eproto_receive_data(&data->eproto_inst, 0x01, rx_buffer, rx_count);
         }
-        usleep(50000);
+        usleep(1000);
     }
 
     printf("%s receive thread finished\n", data->device_name);
@@ -351,7 +351,7 @@ void* device1_process_thread(void* arg) {
 
     g_current_thread_data = data;
 
-    usleep(100000);
+    usleep(1000);
 
     uint8_t test_data[] = {0x11, 0x22, 0x33, 0x44, 0x55};
     printf("%s: Sending test data (needs reply)...\n", data->device_name);
@@ -366,7 +366,7 @@ void* device1_process_thread(void* arg) {
     printf("%s: Data sent successfully\n", data->device_name);
     fflush(stdout);
 
-    usleep(100000);
+    usleep(1000);
 
     uint8_t broadcast_data[] = {0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
     printf("%s: Sending broadcast data to all devices...\n", data->device_name);
@@ -483,7 +483,7 @@ void* device2_receive_thread(void* arg) {
         if (rx_count > 0) {
             eproto_receive_data(&data->eproto_inst, 0x02, rx_buffer, rx_count);
         }
-        usleep(50000);
+        usleep(1000);
     }
 
     printf("%s receive thread finished\n", data->device_name);
@@ -501,7 +501,7 @@ void* device2_process_thread(void* arg) {
 
     for (int i = 0; i < 50; i++) {
         eproto_process(&data->eproto_inst);
-        usleep(50000);
+        usleep(1000);
     }
 
     printf("%s process thread finished\n", data->device_name);
