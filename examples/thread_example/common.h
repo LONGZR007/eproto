@@ -42,6 +42,10 @@
 #define PROTOCOL_FLAG_ENCRYPTED   0x80
 #define PROTOCOL_FLAG_NEED_REPLY  0x01
 
+// 加密密钥定义
+#define KEY_BUS_1_2 0x5A  // 总线1-2之间的密钥
+#define KEY_BUS_3_4 0xA5  // 总线3-4之间的密钥
+
 // 线程类型枚举
 typedef enum {
     THREAD_TYPE_RECEIVE,  // 接收线程
@@ -69,6 +73,8 @@ extern uint8_t g_shared_buffer1[SHARED_BUFFER_SIZE];  // 设备1 -> 设备2
 extern uint8_t g_shared_buffer2[SHARED_BUFFER_SIZE];  // 设备2 -> 设备1
 extern uint8_t g_shared_buffer3[SHARED_BUFFER_SIZE];  // 设备2 -> 设备3
 extern uint8_t g_shared_buffer4[SHARED_BUFFER_SIZE];  // 设备3 -> 设备2
+extern uint8_t g_shared_buffer5[SHARED_BUFFER_SIZE];  // 设备2 -> 设备4
+extern uint8_t g_shared_buffer6[SHARED_BUFFER_SIZE];  // 设备4 -> 设备2
 extern uint16_t g_shared_buffer1_head;
 extern uint16_t g_shared_buffer1_tail;
 extern uint16_t g_shared_buffer2_head;
@@ -77,10 +83,16 @@ extern uint16_t g_shared_buffer3_head;
 extern uint16_t g_shared_buffer3_tail;
 extern uint16_t g_shared_buffer4_head;
 extern uint16_t g_shared_buffer4_tail;
+extern uint16_t g_shared_buffer5_head;
+extern uint16_t g_shared_buffer5_tail;
+extern uint16_t g_shared_buffer6_head;
+extern uint16_t g_shared_buffer6_tail;
 extern pthread_mutex_t g_mutex1;
 extern pthread_mutex_t g_mutex2;
 extern pthread_mutex_t g_mutex3;
 extern pthread_mutex_t g_mutex4;
+extern pthread_mutex_t g_mutex5;
+extern pthread_mutex_t g_mutex6;
 
 // 全局线程数据指针，用于信号函数访问
 // 使用线程局部存储来存储当前线程数据，避免线程安全问题
@@ -109,6 +121,12 @@ void device3_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length);
 
 // 设备3的总线接收函数（从共享缓冲区3读取）
 uint16_t device3_bus_receive(uint8_t* buffer, uint16_t size);
+
+// 设备4的总线发送函数（写入共享缓冲区5）
+void device4_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length);
+
+// 设备4的总线接收函数（从共享缓冲区6读取）
+uint16_t device4_bus_receive(uint8_t* buffer, uint16_t size);
 
 // 模拟内存分配函数
 void* mock_malloc(size_t size);
@@ -180,6 +198,12 @@ eproto_signal_result_t device3_signal_wait(uint32_t timestamp);
 // 设备3信号发送函数
 void device3_signal_send(void);
 
+// 设备4信号等待函数
+eproto_signal_result_t device4_signal_wait(uint32_t timestamp);
+
+// 设备4信号发送函数
+void device4_signal_send(void);
+
 // 设备1接收线程
 void* device1_receive_thread(void* arg);
 
@@ -206,5 +230,29 @@ void* device3_process_thread(void* arg);
 
 // 设备3线程
 void* device3_thread(void* arg);
+
+// 设备4接收线程
+void* device4_receive_thread(void* arg);
+
+// 设备4处理线程
+void* device4_process_thread(void* arg);
+
+// 设备4线程
+void* device4_thread(void* arg);
+
+// 加解密函数
+uint8_t* encrypt_data(uint8_t* data, uint16_t length, uint8_t key);
+uint8_t* decrypt_data(uint8_t* data, uint16_t length, uint8_t key);
+uint8_t get_key_for_bus(uint8_t source_addr, uint8_t dest_addr);
+
+// 转发回调函数
+eproto_error_t device2_forward_callback(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr,
+                                        uint8_t* data, uint16_t length,
+                                        uint8_t** out_data, uint16_t* out_length,
+                                        eproto_forward_post_func_t* post_func,
+                                        void** private_data);
+void device2_forward_post_func(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr,
+                                uint8_t* out_data, uint16_t out_length,
+                                void* private_data);
 
 #endif  // COMMON_H

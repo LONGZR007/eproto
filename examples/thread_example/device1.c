@@ -29,7 +29,6 @@ eproto_t* g_device1_eproto = NULL;
 
 // 设备1接收回调函数
 void device1_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
-    (void)bus;
     uint8_t encrypted = 0;
     uint8_t need_reply = 0;
     uint16_t payload_length = 0;
@@ -40,6 +39,19 @@ void device1_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_
         printf("%02X ", data[i]);
     }
     printf("\n");
+
+    if (encrypted && payload && payload_length > 0) {
+        uint8_t key = get_key_for_bus(source_address, bus->self_addr);
+        uint8_t* decrypted_payload = decrypt_data(payload, payload_length, key);
+        if (decrypted_payload) {
+            printf("Device 1: Decrypted payload: ");
+            for (uint16_t i = 0; i < payload_length; i++) {
+                printf("%02X ", decrypted_payload[i]);
+            }
+            printf("\n");
+            free(decrypted_payload);
+        }
+    }
 
     if (payload && payload_length > 0 && need_reply) {
         printf("Device 1: Protocol header - encrypted=%d, need_reply=%d\n", encrypted, need_reply);
@@ -169,12 +181,12 @@ void* device1_process_thread(void* arg) {
     // 等待设备2初始化
     usleep(1000);
 
-    // 发送需要回复的测试数据（need_reply=1）到设备2的总线2
-    uint8_t test_data[] = {0x11, 0x22, 0x33, 0x44, 0x55};
+    // 测试1: 非加密数据从设备1到设备2的总线2
+    uint8_t test_data_plain[] = {0x11, 0x22, 0x33, 0x44, 0x55};
     uint16_t wrapped_length = 0;
-    uint8_t* wrapped_data = protocol_wrap(0, 1, test_data, sizeof(test_data), &wrapped_length);
+    uint8_t* wrapped_data = protocol_wrap(0, 1, test_data_plain, sizeof(test_data_plain), &wrapped_length);
     if (wrapped_data) {
-        printf("%s: Sending test data (needs reply) to device 2 (bus 2)...\n", data->device_name);
+        printf("%s: [TEST 1] Sending PLAIN data to device 2 (bus 2)...\n", data->device_name);
         printf("%s: Wrapped data: ", data->device_name);
         for (uint16_t i = 0; i < wrapped_length; i++) {
             printf("%02X ", wrapped_data[i]);
@@ -183,58 +195,88 @@ void* device1_process_thread(void* arg) {
         eproto_error_t error = eproto_send(&data->eproto_inst, 0x02, wrapped_data, wrapped_length, device1_send_callback, data, 1);
         free(wrapped_data);
         if (error != EPROTO_OK) {
-            printf("%s: Failed to send data\n", data->device_name);
-            pthread_exit(NULL);
+            printf("%s: Failed to send plain data\n", data->device_name);
+        } else {
+            printf("%s: Plain data sent successfully\n", data->device_name);
         }
-        printf("%s: Data sent successfully\n", data->device_name);
-    } else {
-        printf("%s: Failed to wrap data\n", data->device_name);
-        pthread_exit(NULL);
     }
 
     // 等待一段时间，确保前面的数据包处理完成
     usleep(100000);
 
-    // 发送不需要回复的测试数据（need_reply=0）到设备2的总线2
-    uint8_t test_data_no_wait[] = {0x66, 0x77, 0x88, 0x99, 0xAA};
-    wrapped_data = protocol_wrap(0, 0, test_data_no_wait, sizeof(test_data_no_wait), &wrapped_length);
-    if (wrapped_data) {
-        printf("%s: Sending test data (no reply needed) to device 2 (bus 2)...\n", data->device_name);
-        printf("%s: Wrapped data: ", data->device_name);
-        for (uint16_t i = 0; i < wrapped_length; i++) {
-            printf("%02X ", wrapped_data[i]);
+    // 测试2: 加密数据从设备1到设备2的总线2
+    uint8_t test_data_encrypted[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE};
+    uint8_t* encrypted_payload = encrypt_data(test_data_encrypted, sizeof(test_data_encrypted), KEY_BUS_1_2);
+    if (encrypted_payload) {
+        wrapped_data = protocol_wrap(1, 1, encrypted_payload, sizeof(test_data_encrypted), &wrapped_length);
+        free(encrypted_payload);
+        if (wrapped_data) {
+            printf("%s: [TEST 2] Sending ENCRYPTED data to device 2 (bus 2)...\n", data->device_name);
+            printf("%s: Wrapped data: ", data->device_name);
+            for (uint16_t i = 0; i < wrapped_length; i++) {
+                printf("%02X ", wrapped_data[i]);
+            }
+            printf("\n");
+            eproto_error_t error = eproto_send(&data->eproto_inst, 0x02, wrapped_data, wrapped_length, device1_send_callback, data, 1);
+            free(wrapped_data);
+            if (error != EPROTO_OK) {
+                printf("%s: Failed to send encrypted data\n", data->device_name);
+            } else {
+                printf("%s: Encrypted data sent successfully\n", data->device_name);
+            }
         }
-        printf("\n");
-        eproto_error_t error = eproto_send(&data->eproto_inst, 0x02, wrapped_data, wrapped_length, device1_send_callback, data, 0);
-        free(wrapped_data);
-        if (error != EPROTO_OK) {
-            printf("%s: Failed to send data\n", data->device_name);
-            pthread_exit(NULL);
-        }
-        printf("%s: Data sent successfully\n", data->device_name);
-    }
-
-    // 发送数据给设备3的总线4（需要通过设备2转发）
-    uint8_t test_data_to_3[] = {0x33, 0x44, 0x55, 0x66, 0x77};
-    wrapped_data = protocol_wrap(0, 1, test_data_to_3, sizeof(test_data_to_3), &wrapped_length);
-    if (wrapped_data) {
-        printf("%s: Sending test data to device 3 (bus 4 via device 2 forwarding)...\n", data->device_name);
-        printf("%s: Wrapped data: ", data->device_name);
-        for (uint16_t i = 0; i < wrapped_length; i++) {
-            printf("%02X ", wrapped_data[i]);
-        }
-        printf("\n");
-        eproto_error_t error = eproto_send(&data->eproto_inst, 0x04, wrapped_data, wrapped_length, device1_send_callback, data, 0);
-        free(wrapped_data);
-        if (error != EPROTO_OK) {
-            printf("%s: Failed to send data to device 3\n", data->device_name);
-            pthread_exit(NULL);
-        }
-        printf("%s: Data sent to device 3 successfully\n", data->device_name);
     }
 
     // 等待一段时间，确保前面的数据包处理完成
-    usleep(1000);
+    usleep(100000);
+
+    // 测试3: 非加密数据从设备1到设备4（通过设备2转发）
+    uint8_t test_data_to_4_plain[] = {0x33, 0x44, 0x55, 0x66, 0x77};
+    wrapped_data = protocol_wrap(0, 1, test_data_to_4_plain, sizeof(test_data_to_4_plain), &wrapped_length);
+    if (wrapped_data) {
+        printf("%s: [TEST 3] Sending PLAIN data to device 4 (via device 2 forwarding)...\n", data->device_name);
+        printf("%s: Wrapped data: ", data->device_name);
+        for (uint16_t i = 0; i < wrapped_length; i++) {
+            printf("%02X ", wrapped_data[i]);
+        }
+        printf("\n");
+        eproto_error_t error = eproto_send(&data->eproto_inst, 0x04, wrapped_data, wrapped_length, device1_send_callback, data, 1);
+        free(wrapped_data);
+        if (error != EPROTO_OK) {
+            printf("%s: Failed to send plain data to device 4\n", data->device_name);
+        } else {
+            printf("%s: Plain data to device 4 sent successfully\n", data->device_name);
+        }
+    }
+
+    // 等待一段时间，确保前面的数据包处理完成
+    usleep(100000);
+
+    // 测试4: 加密数据从设备1到设备4（通过设备2转发）
+    uint8_t test_data_to_4_encrypted[] = {0x11, 0x22, 0x33, 0x44, 0x55};
+    encrypted_payload = encrypt_data(test_data_to_4_encrypted, sizeof(test_data_to_4_encrypted), KEY_BUS_1_2);
+    if (encrypted_payload) {
+        wrapped_data = protocol_wrap(1, 1, encrypted_payload, sizeof(test_data_to_4_encrypted), &wrapped_length);
+        free(encrypted_payload);
+        if (wrapped_data) {
+            printf("%s: [TEST 4] Sending ENCRYPTED data to device 4 (via device 2 forwarding)...\n", data->device_name);
+            printf("%s: Wrapped data: ", data->device_name);
+            for (uint16_t i = 0; i < wrapped_length; i++) {
+                printf("%02X ", wrapped_data[i]);
+            }
+            printf("\n");
+            eproto_error_t error = eproto_send(&data->eproto_inst, 0x04, wrapped_data, wrapped_length, device1_send_callback, data, 1);
+            free(wrapped_data);
+            if (error != EPROTO_OK) {
+                printf("%s: Failed to send encrypted data to device 4\n", data->device_name);
+            } else {
+                printf("%s: Encrypted data to device 4 sent successfully\n", data->device_name);
+            }
+        }
+    }
+
+    // 等待一段时间，确保所有的数据包处理完成
+    usleep(100000);
 
     // 发送广播数据
     uint8_t broadcast_data[] = {0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
@@ -250,9 +292,9 @@ void* device1_process_thread(void* arg) {
         free(wrapped_data);
         if (error != EPROTO_OK) {
             printf("%s: Failed to send broadcast data\n", data->device_name);
-            pthread_exit(NULL);
+        } else {
+            printf("%s: Broadcast data sent successfully\n", data->device_name);
         }
-        printf("%s: Broadcast data sent successfully\n", data->device_name);
     }
 
     // 定期处理协议

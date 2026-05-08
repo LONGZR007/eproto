@@ -55,8 +55,20 @@ int main() {
     device3_data->device_address = 0x03;
     device3_data->device_name = "Device 3";
 
+    // 创建设备4数据（动态分配）
+    thread_data_t* device4_data = (thread_data_t*)malloc(sizeof(thread_data_t));
+    if (!device4_data) {
+        printf("Failed to allocate memory for device 4 data\n");
+        free(device1_data);
+        free(device2_data);
+        free(device3_data);
+        return 1;
+    }
+    device4_data->device_address = 0x04;
+    device4_data->device_name = "Device 4";
+
     // 创建线程
-    pthread_t thread1, thread2, thread3;
+    pthread_t thread1, thread2, thread3, thread4;
 
     // 启动设备1线程
     if (pthread_create(&thread1, NULL, device1_thread, device1_data) != 0) {
@@ -82,6 +94,17 @@ int main() {
         free(device1_data);
         free(device2_data);
         free(device3_data);
+        free(device4_data);
+        return 1;
+    }
+
+    // 启动设备4线程
+    if (pthread_create(&thread4, NULL, device4_thread, device4_data) != 0) {
+        printf("Failed to create device 4 thread\n");
+        free(device1_data);
+        free(device2_data);
+        free(device3_data);
+        free(device4_data);
         return 1;
     }
 
@@ -89,11 +112,13 @@ int main() {
     pthread_join(thread1, NULL);
     pthread_join(thread2, NULL);
     pthread_join(thread3, NULL);
+    pthread_join(thread4, NULL);
 
     // 释放动态分配的内存
     free(device1_data);
     free(device2_data);
     free(device3_data);
+    free(device4_data);
 
     printf("All threads finished\n");
     return 0;

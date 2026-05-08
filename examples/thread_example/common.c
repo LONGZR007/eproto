@@ -29,6 +29,8 @@ uint8_t g_shared_buffer1[SHARED_BUFFER_SIZE];  // 设备1 -> 设备2
 uint8_t g_shared_buffer2[SHARED_BUFFER_SIZE];  // 设备2 -> 设备1
 uint8_t g_shared_buffer3[SHARED_BUFFER_SIZE];  // 设备2 -> 设备3
 uint8_t g_shared_buffer4[SHARED_BUFFER_SIZE];  // 设备3 -> 设备2
+uint8_t g_shared_buffer5[SHARED_BUFFER_SIZE];  // 设备2 -> 设备4
+uint8_t g_shared_buffer6[SHARED_BUFFER_SIZE];  // 设备4 -> 设备2
 uint16_t g_shared_buffer1_head = 0;
 uint16_t g_shared_buffer1_tail = 0;
 uint16_t g_shared_buffer2_head = 0;
@@ -37,10 +39,16 @@ uint16_t g_shared_buffer3_head = 0;
 uint16_t g_shared_buffer3_tail = 0;
 uint16_t g_shared_buffer4_head = 0;
 uint16_t g_shared_buffer4_tail = 0;
+uint16_t g_shared_buffer5_head = 0;
+uint16_t g_shared_buffer5_tail = 0;
+uint16_t g_shared_buffer6_head = 0;
+uint16_t g_shared_buffer6_tail = 0;
 pthread_mutex_t g_mutex1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_mutex3 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_mutex4 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t g_mutex5 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t g_mutex6 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_eproto_lock = PTHREAD_MUTEX_INITIALIZER;
 
 // 全局线程数据指针，用于信号函数访问
@@ -199,21 +207,21 @@ uint16_t device2_bus_receive(uint8_t* buffer, uint16_t size) {
     return count;
 }
 
-// 设备2的第二条总线发送函数（写入共享缓冲区3）
+// 设备2的第二条总线发送函数（写入共享缓冲区5）
 void device2_bus2_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
     (void)bus;
-    pthread_mutex_lock(&g_mutex3);
+    pthread_mutex_lock(&g_mutex5);
     for (uint16_t i = 0; i < length; i++) {
-        uint16_t next_head = (g_shared_buffer3_head + 1) % SHARED_BUFFER_SIZE;
-        if (next_head != g_shared_buffer3_tail) {
-            g_shared_buffer3[g_shared_buffer3_head] = data[i];
-            g_shared_buffer3_head = next_head;
+        uint16_t next_head = (g_shared_buffer5_head + 1) % SHARED_BUFFER_SIZE;
+        if (next_head != g_shared_buffer5_tail) {
+            g_shared_buffer5[g_shared_buffer5_head] = data[i];
+            g_shared_buffer5_head = next_head;
         } else {
             printf("Device 2 (bus 2): Buffer overflow, dropping data\n");
             break;
         }
     }
-    pthread_mutex_unlock(&g_mutex3);
+    pthread_mutex_unlock(&g_mutex5);
     printf("Device 2 (bus 2) sent: ");
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -221,15 +229,15 @@ void device2_bus2_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
     printf("\n");
 }
 
-// 设备2的第二条总线接收函数（从共享缓冲区4读取）
+// 设备2的第二条总线接收函数（从共享缓冲区6读取）
 uint16_t device2_bus2_receive(uint8_t* buffer, uint16_t size) {
     uint16_t count = 0;
-    pthread_mutex_lock(&g_mutex4);
-    while (g_shared_buffer4_tail != g_shared_buffer4_head && count < size) {
-        buffer[count++] = g_shared_buffer4[g_shared_buffer4_tail];
-        g_shared_buffer4_tail = (g_shared_buffer4_tail + 1) % SHARED_BUFFER_SIZE;
+    pthread_mutex_lock(&g_mutex6);
+    while (g_shared_buffer6_tail != g_shared_buffer6_head && count < size) {
+        buffer[count++] = g_shared_buffer6[g_shared_buffer6_tail];
+        g_shared_buffer6_tail = (g_shared_buffer6_tail + 1) % SHARED_BUFFER_SIZE;
     }
-    pthread_mutex_unlock(&g_mutex4);
+    pthread_mutex_unlock(&g_mutex6);
     if (count > 0) {
         printf("Device 2 (bus 2) received %d bytes: ", count);
         for (uint16_t i = 0; i < count; i++) {
@@ -279,4 +287,157 @@ uint16_t device3_bus_receive(uint8_t* buffer, uint16_t size) {
         printf("\n");
     }
     return count;
+}
+
+// 设备4的总线发送函数（写入共享缓冲区5）
+void device4_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+    (void)bus;
+    pthread_mutex_lock(&g_mutex5);
+    for (uint16_t i = 0; i < length; i++) {
+        uint16_t next_head = (g_shared_buffer5_head + 1) % SHARED_BUFFER_SIZE;
+        if (next_head != g_shared_buffer5_tail) {
+            g_shared_buffer5[g_shared_buffer5_head] = data[i];
+            g_shared_buffer5_head = next_head;
+        } else {
+            printf("Device 4: Buffer overflow, dropping data\n");
+            break;
+        }
+    }
+    pthread_mutex_unlock(&g_mutex5);
+    printf("Device 4 sent: ");
+    for (uint16_t i = 0; i < length; i++) {
+        printf("%02X ", data[i]);
+    }
+    printf("\n");
+}
+
+// 设备4的总线接收函数（从共享缓冲区6读取）
+uint16_t device4_bus_receive(uint8_t* buffer, uint16_t size) {
+    uint16_t count = 0;
+    pthread_mutex_lock(&g_mutex6);
+    while (g_shared_buffer6_tail != g_shared_buffer6_head && count < size) {
+        buffer[count++] = g_shared_buffer6[g_shared_buffer6_tail];
+        g_shared_buffer6_tail = (g_shared_buffer6_tail + 1) % SHARED_BUFFER_SIZE;
+    }
+    pthread_mutex_unlock(&g_mutex6);
+    if (count > 0) {
+        printf("Device 4 received %d bytes: ", count);
+        for (uint16_t i = 0; i < count; i++) {
+            printf("%02X ", buffer[i]);
+        }
+        printf("\n");
+    }
+    return count;
+}
+
+// 加密函数
+uint8_t* encrypt_data(uint8_t* data, uint16_t length, uint8_t key) {
+    uint8_t* encrypted = (uint8_t*)malloc(length);
+    if (!encrypted) {
+        return NULL;
+    }
+    for (uint16_t i = 0; i < length; i++) {
+        encrypted[i] = data[i] ^ key;
+    }
+    return encrypted;
+}
+
+// 解密函数
+uint8_t* decrypt_data(uint8_t* data, uint16_t length, uint8_t key) {
+    return encrypt_data(data, length, key);
+}
+
+// 根据源地址和目标地址获取密钥
+uint8_t get_key_for_bus(uint8_t source_addr, uint8_t dest_addr) {
+    if ((source_addr == 0x01 && dest_addr == 0x02) ||
+        (source_addr == 0x02 && dest_addr == 0x01)) {
+        return KEY_BUS_1_2;
+    }
+    if ((source_addr == 0x03 && dest_addr == 0x04) ||
+        (source_addr == 0x04 && dest_addr == 0x03)) {
+        return KEY_BUS_3_4;
+    }
+    return 0;
+}
+
+// 转发后处理回调函数
+void device2_forward_post_func(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr,
+                              uint8_t* out_data, uint16_t out_length,
+                              void* private_data) {
+    (void)bus;
+    (void)source_addr;
+    (void)dest_addr;
+    (void)out_length;
+    (void)private_data;
+    if (out_data) {
+        free(out_data);
+    }
+}
+
+// 转发回调函数
+eproto_error_t device2_forward_callback(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr,
+                                       uint8_t* data, uint16_t length,
+                                       uint8_t** out_data, uint16_t* out_length,
+                                       eproto_forward_post_func_t* post_func,
+                                       void** private_data) {
+    (void)bus;
+    (void)private_data;
+    
+    uint8_t encrypted = (data[0] & PROTOCOL_FLAG_ENCRYPTED) ? 1 : 0;
+    
+    printf("Device 2: Forward callback called, source bus: 0x%02X, dest bus: 0x%02X, encrypted: %d, length: %d\n", 
+           source_addr, dest_addr, encrypted, length);
+    
+    if (encrypted) {
+        uint8_t key = get_key_for_bus(source_addr, dest_addr);
+        uint8_t* decrypted_data = decrypt_data(data + PROTOCOL_HEADER_SIZE, length - PROTOCOL_HEADER_SIZE, key);
+        if (!decrypted_data) {
+            return EPROTO_ERROR_BUFFER_FULL;
+        }
+        
+        printf("Device 2: Decrypted payload data: ");
+        for (uint16_t i = 0; i < length - PROTOCOL_HEADER_SIZE; i++) {
+            printf("%02X ", decrypted_data[i]);
+        }
+        printf("\n");
+        
+        uint8_t* re_encrypted_data = encrypt_data(decrypted_data, length - PROTOCOL_HEADER_SIZE, key);
+        free(decrypted_data);
+        
+        if (!re_encrypted_data) {
+            return EPROTO_ERROR_BUFFER_FULL;
+        }
+        
+        *out_data = (uint8_t*)malloc(length);
+        if (!*out_data) {
+            free(re_encrypted_data);
+            return EPROTO_ERROR_BUFFER_FULL;
+        }
+        
+        (*out_data)[0] = data[0];
+        (*out_data)[1] = data[1];
+        memcpy(*out_data + PROTOCOL_HEADER_SIZE, re_encrypted_data, length - PROTOCOL_HEADER_SIZE);
+        *out_length = length;
+        
+        printf("Device 2: Re-encrypted payload data: ");
+        for (uint16_t i = 0; i < length - PROTOCOL_HEADER_SIZE; i++) {
+            printf("%02X ", re_encrypted_data[i]);
+        }
+        printf("\n");
+        
+        free(re_encrypted_data);
+    } else {
+        *out_data = (uint8_t*)malloc(length);
+        if (!*out_data) {
+            return EPROTO_ERROR_BUFFER_FULL;
+        }
+        memcpy(*out_data, data, length);
+        *out_length = length;
+        
+        printf("Device 2: Non-encrypted data passed through\n");
+    }
+    
+    *post_func = device2_forward_post_func;
+    
+    return EPROTO_OK;
 }

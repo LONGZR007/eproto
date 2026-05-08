@@ -10,7 +10,7 @@ CFLAGS = -Wall -Wextra -g -I../../inc -I.
 LDFLAGS = -pthread
 
 # Source files
-SRCS = common.c device1.c device2.c device3.c main.c
+SRCS = common.c device1.c device2.c device3.c device4.c main.c
 
 # Build directory
 BUILDDIR = build

@@ -29,7 +29,6 @@ eproto_t* g_device2_eproto = NULL;
 
 // 设备2接收回调函数
 void device2_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
-    (void)bus;
     uint8_t encrypted = 0;
     uint8_t need_reply = 0;
     uint16_t payload_length = 0;
@@ -40,6 +39,19 @@ void device2_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_
         printf("%02X ", data[i]);
     }
     printf("\n");
+
+    if (encrypted && payload && payload_length > 0) {
+        uint8_t key = get_key_for_bus(source_address, bus->self_addr);
+        uint8_t* decrypted_payload = decrypt_data(payload, payload_length, key);
+        if (decrypted_payload) {
+            printf("Device 2: Decrypted payload: ");
+            for (uint16_t i = 0; i < payload_length; i++) {
+                printf("%02X ", decrypted_payload[i]);
+            }
+            printf("\n");
+            free(decrypted_payload);
+        }
+    }
 
     if (payload && payload_length > 0 && need_reply) {
         printf("Device 2: Protocol header - encrypted=%d, need_reply=%d\n", encrypted, need_reply);
@@ -125,24 +137,18 @@ void* device2_receive_thread(void* arg) {
     thread_data_t* data = (thread_data_t*)arg;
     printf("%s receive thread started\n", data->device_name);
 
-    // 设置当前线程数据
     g_current_thread_data = data;
 
-    // 定期接收数据
     while (1) {
-        // 模拟从第一条总线接收数据（总线2，连接到设备1）
         uint8_t rx_buffer1[256];
         uint16_t rx_count1 = device2_bus_receive(rx_buffer1, sizeof(rx_buffer1));
         if (rx_count1 > 0) {
-            // 使用设备2自己的总线2地址0x02
             eproto_receive_data(&data->eproto_inst, 0x02, rx_buffer1, rx_count1);
         }
 
-        // 模拟从第二条总线接收数据（总线3，连接到设备3）
         uint8_t rx_buffer2[256];
         uint16_t rx_count2 = device2_bus2_receive(rx_buffer2, sizeof(rx_buffer2));
         if (rx_count2 > 0) {
-            // 使用设备2自己的总线3地址0x03
             eproto_receive_data(&data->eproto_inst, 0x03, rx_buffer2, rx_count2);
         }
         usleep(10000);
@@ -213,7 +219,7 @@ void* device2_thread(void* arg) {
         .user_data = NULL,
         .status_callback = mock_status_callback,
         .receive_callback = device2_receive_callback,
-        .forward_callback = NULL
+        .forward_callback = device2_forward_callback
     };
     error = eproto_add_bus(&data->eproto_inst, &bus1);
     if (error != EPROTO_OK) {
@@ -240,7 +246,7 @@ void* device2_thread(void* arg) {
         .user_data = NULL,
         .status_callback = mock_status_callback,
         .receive_callback = device2_receive_callback,
-        .forward_callback = NULL
+        .forward_callback = device2_forward_callback
     };
     error = eproto_add_bus(&data->eproto_inst, &bus2);
     if (error != EPROTO_OK) {
@@ -256,6 +262,13 @@ void* device2_thread(void* arg) {
         pthread_exit(NULL);
     }
     printf("%s: Target device 0x04 added successfully\n", data->device_name);
+
+    error = eproto_add_destination_device(&data->eproto_inst, 0x02, 0x04);
+    if (error != EPROTO_OK) {
+        printf("%s: Failed to add target device 0x04 to bus 2\n", data->device_name);
+        pthread_exit(NULL);
+    }
+    printf("%s: Target device 0x04 added to bus 2 successfully\n", data->device_name);
 
     // 创建接收线程和处理线程
     pthread_t receive_thread, process_thread;
