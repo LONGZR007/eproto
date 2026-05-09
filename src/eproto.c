@@ -550,18 +550,12 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
             uint8_t is_handshake = frame.packet_type & EPROTO_PACKET_TYPE_HANDSHAKE_FLAG;
 
             // 根据实际包类型处理
-            switch (actual_packet_type) {
-                case EPROTO_PACKET_TYPE_USER_SEND:
-                    eproto_process_user_send_packet(eproto, bus_mgr, &frame, is_retransmit, is_handshake);
-                    break;
-
-                case EPROTO_PACKET_TYPE_PROTOCOL_ACK:
-                    eproto_process_protocol_ack_packet(eproto, bus_mgr, &frame);
-                    break;
-
-                case EPROTO_PACKET_TYPE_USER_REPLY:
-                    eproto_process_user_reply_packet(eproto, bus_mgr, &frame);
-                    break;
+            if ((actual_packet_type & EPROTO_PACKET_TYPE_USER_REPLY) != 0) {
+                eproto_process_user_reply_packet(eproto, bus_mgr, &frame);
+            } else if ((actual_packet_type & EPROTO_PACKET_TYPE_PROTOCOL_ACK) != 0) {
+                eproto_process_protocol_ack_packet(eproto, bus_mgr, &frame);
+            } else {
+                eproto_process_user_send_packet(eproto, bus_mgr, &frame, is_retransmit, is_handshake);
             }
 
             // 释放解析结果
