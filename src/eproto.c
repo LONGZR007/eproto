@@ -534,25 +534,16 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
                 continue;
             }
 
-            // 去除重发标志和握手标志，获取实际包类型
-            uint8_t actual_packet_type =
-                frame.packet_type & ~(EPROTO_PACKET_TYPE_RETRANSMIT_FLAG | EPROTO_PACKET_TYPE_HANDSHAKE_FLAG);
-
             EPROTO_INFO_LOG(
                 "%s: Received valid frame from %02X, packet ID: %d, "
                 "type: %s\n",
                 EPROTO_BUS_NAME(bus_mgr), frame.src_addr, frame.packet_id,
-                eproto_packet_type_names[actual_packet_type]);
-
-            // 检查是否是重发包
-            uint8_t is_retransmit = frame.packet_type & EPROTO_PACKET_TYPE_RETRANSMIT_FLAG;
-            // 检查是否是握手包
-            uint8_t is_handshake = frame.packet_type & EPROTO_PACKET_TYPE_HANDSHAKE_FLAG;
+                eproto_packet_type_names[frame.packet_type & ~(EPROTO_PACKET_TYPE_RETRANSMIT_FLAG | EPROTO_PACKET_TYPE_HANDSHAKE_FLAG)]);
 
             // 根据实际包类型处理
-            if ((actual_packet_type & EPROTO_PACKET_TYPE_PROTOCOL_ACK) != 0) {
+            if ((frame.packet_type & EPROTO_PACKET_TYPE_PROTOCOL_ACK) != 0) {
                  eproto_process_protocol_ack_packet(eproto, bus_mgr, &frame);
-             } else if ((actual_packet_type & EPROTO_PACKET_TYPE_USER_REPLY) != 0) {
+             } else if ((frame.packet_type & EPROTO_PACKET_TYPE_USER_REPLY) != 0) {
                  eproto_process_user_reply_packet(eproto, bus_mgr, &frame);
              } else {
                  eproto_process_user_send_packet(eproto, bus_mgr, &frame);
