@@ -122,12 +122,6 @@ void device3_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length);
 // 设备3的总线接收函数（从共享缓冲区3读取）
 uint16_t device3_bus_receive(uint8_t* buffer, uint16_t size);
 
-// 设备4的总线发送函数（写入共享缓冲区5）
-void device4_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length);
-
-// 设备4的总线接收函数（从共享缓冲区6读取）
-uint16_t device4_bus_receive(uint8_t* buffer, uint16_t size);
-
 // 模拟内存分配函数
 void* mock_malloc(size_t size);
 
@@ -198,12 +192,6 @@ eproto_signal_result_t device3_signal_wait(uint32_t timestamp);
 // 设备3信号发送函数
 void device3_signal_send(void);
 
-// 设备4信号等待函数
-eproto_signal_result_t device4_signal_wait(uint32_t timestamp);
-
-// 设备4信号发送函数
-void device4_signal_send(void);
-
 // 设备1接收线程
 void* device1_receive_thread(void* arg);
 
@@ -230,15 +218,6 @@ void* device3_process_thread(void* arg);
 
 // 设备3线程
 void* device3_thread(void* arg);
-
-// 设备4接收线程
-void* device4_receive_thread(void* arg);
-
-// 设备4处理线程
-void* device4_process_thread(void* arg);
-
-// 设备4线程
-void* device4_thread(void* arg);
 
 // 加解密函数
 uint8_t* encrypt_data(uint8_t* data, uint16_t length, uint8_t key);

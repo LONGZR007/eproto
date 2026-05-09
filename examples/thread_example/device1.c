@@ -230,11 +230,11 @@ void* device1_process_thread(void* arg) {
     // 等待一段时间，确保前面的数据包处理完成
     usleep(100000);
 
-    // 测试3: 非加密数据从设备1到设备4（通过设备2转发）
-    uint8_t test_data_to_4_plain[] = {0x33, 0x44, 0x55, 0x66, 0x77};
-    wrapped_data = protocol_wrap(0, 1, test_data_to_4_plain, sizeof(test_data_to_4_plain), &wrapped_length);
+    // 测试3: 非加密数据从设备1到设备3（通过设备2转发）
+    uint8_t test_data_to_3_plain[] = {0x33, 0x44, 0x55, 0x66, 0x77};
+    wrapped_data = protocol_wrap(0, 1, test_data_to_3_plain, sizeof(test_data_to_3_plain), &wrapped_length);
     if (wrapped_data) {
-        printf("%s: [TEST 3] Sending PLAIN data to device 4 (via device 2 forwarding)...\n", data->device_name);
+        printf("%s: [TEST 3] Sending PLAIN data to device 3 (via device 2 forwarding)...\n", data->device_name);
         printf("%s: Wrapped data: ", data->device_name);
         for (uint16_t i = 0; i < wrapped_length; i++) {
             printf("%02X ", wrapped_data[i]);
@@ -243,23 +243,23 @@ void* device1_process_thread(void* arg) {
         eproto_error_t error = eproto_send(&data->eproto_inst, 0x04, wrapped_data, wrapped_length, device1_send_callback, data, 1);
         free(wrapped_data);
         if (error != EPROTO_OK) {
-            printf("%s: Failed to send plain data to device 4\n", data->device_name);
+            printf("%s: Failed to send plain data to device 3\n", data->device_name);
         } else {
-            printf("%s: Plain data to device 4 sent successfully\n", data->device_name);
+            printf("%s: Plain data to device 3 sent successfully\n", data->device_name);
         }
     }
 
     // 等待一段时间，确保前面的数据包处理完成
     usleep(100000);
 
-    // 测试4: 加密数据从设备1到设备4（通过设备2转发）
-    uint8_t test_data_to_4_encrypted[] = {0x11, 0x22, 0x33, 0x44, 0x55};
-    encrypted_payload = encrypt_data(test_data_to_4_encrypted, sizeof(test_data_to_4_encrypted), KEY_BUS_1_2);
+    // 测试4: 加密数据从设备1到设备3（通过设备2转发）
+    uint8_t test_data_to_3_encrypted[] = {0x11, 0x22, 0x33, 0x44, 0x55};
+    encrypted_payload = encrypt_data(test_data_to_3_encrypted, sizeof(test_data_to_3_encrypted), KEY_BUS_1_2);
     if (encrypted_payload) {
-        wrapped_data = protocol_wrap(1, 1, encrypted_payload, sizeof(test_data_to_4_encrypted), &wrapped_length);
+        wrapped_data = protocol_wrap(1, 1, encrypted_payload, sizeof(test_data_to_3_encrypted), &wrapped_length);
         free(encrypted_payload);
         if (wrapped_data) {
-            printf("%s: [TEST 4] Sending ENCRYPTED data to device 4 (via device 2 forwarding)...\n", data->device_name);
+            printf("%s: [TEST 4] Sending ENCRYPTED data to device 3 (via device 2 forwarding)...\n", data->device_name);
             printf("%s: Wrapped data: ", data->device_name);
             for (uint16_t i = 0; i < wrapped_length; i++) {
                 printf("%02X ", wrapped_data[i]);
@@ -268,9 +268,9 @@ void* device1_process_thread(void* arg) {
             eproto_error_t error = eproto_send(&data->eproto_inst, 0x04, wrapped_data, wrapped_length, device1_send_callback, data, 1);
             free(wrapped_data);
             if (error != EPROTO_OK) {
-                printf("%s: Failed to send encrypted data to device 4\n", data->device_name);
+                printf("%s: Failed to send encrypted data to device 3\n", data->device_name);
             } else {
-                printf("%s: Encrypted data to device 4 sent successfully\n", data->device_name);
+                printf("%s: Encrypted data to device 3 sent successfully\n", data->device_name);
             }
         }
     }

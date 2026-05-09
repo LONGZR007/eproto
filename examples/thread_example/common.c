@@ -29,8 +29,6 @@ uint8_t g_shared_buffer1[SHARED_BUFFER_SIZE];  // 设备1 -> 设备2
 uint8_t g_shared_buffer2[SHARED_BUFFER_SIZE];  // 设备2 -> 设备1
 uint8_t g_shared_buffer3[SHARED_BUFFER_SIZE];  // 设备2 -> 设备3
 uint8_t g_shared_buffer4[SHARED_BUFFER_SIZE];  // 设备3 -> 设备2
-uint8_t g_shared_buffer5[SHARED_BUFFER_SIZE];  // 设备2 -> 设备4
-uint8_t g_shared_buffer6[SHARED_BUFFER_SIZE];  // 设备4 -> 设备2
 uint16_t g_shared_buffer1_head = 0;
 uint16_t g_shared_buffer1_tail = 0;
 uint16_t g_shared_buffer2_head = 0;
@@ -39,16 +37,10 @@ uint16_t g_shared_buffer3_head = 0;
 uint16_t g_shared_buffer3_tail = 0;
 uint16_t g_shared_buffer4_head = 0;
 uint16_t g_shared_buffer4_tail = 0;
-uint16_t g_shared_buffer5_head = 0;
-uint16_t g_shared_buffer5_tail = 0;
-uint16_t g_shared_buffer6_head = 0;
-uint16_t g_shared_buffer6_tail = 0;
 pthread_mutex_t g_mutex1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_mutex3 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_mutex4 = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t g_mutex5 = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t g_mutex6 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_eproto_lock = PTHREAD_MUTEX_INITIALIZER;
 
 // 全局线程数据指针，用于信号函数访问
@@ -207,21 +199,21 @@ uint16_t device2_bus_receive(uint8_t* buffer, uint16_t size) {
     return count;
 }
 
-// 设备2的第二条总线发送函数（写入共享缓冲区5）
+// 设备2的第二条总线发送函数（写入共享缓冲区3）
 void device2_bus2_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
     (void)bus;
-    pthread_mutex_lock(&g_mutex5);
+    pthread_mutex_lock(&g_mutex3);
     for (uint16_t i = 0; i < length; i++) {
-        uint16_t next_head = (g_shared_buffer5_head + 1) % SHARED_BUFFER_SIZE;
-        if (next_head != g_shared_buffer5_tail) {
-            g_shared_buffer5[g_shared_buffer5_head] = data[i];
-            g_shared_buffer5_head = next_head;
+        uint16_t next_head = (g_shared_buffer3_head + 1) % SHARED_BUFFER_SIZE;
+        if (next_head != g_shared_buffer3_tail) {
+            g_shared_buffer3[g_shared_buffer3_head] = data[i];
+            g_shared_buffer3_head = next_head;
         } else {
             printf("Device 2 (bus 2): Buffer overflow, dropping data\n");
             break;
         }
     }
-    pthread_mutex_unlock(&g_mutex5);
+    pthread_mutex_unlock(&g_mutex3);
     printf("Device 2 (bus 2) sent: ");
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
@@ -229,15 +221,15 @@ void device2_bus2_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
     printf("\n");
 }
 
-// 设备2的第二条总线接收函数（从共享缓冲区6读取）
+// 设备2的第二条总线接收函数（从共享缓冲区4读取）
 uint16_t device2_bus2_receive(uint8_t* buffer, uint16_t size) {
     uint16_t count = 0;
-    pthread_mutex_lock(&g_mutex6);
-    while (g_shared_buffer6_tail != g_shared_buffer6_head && count < size) {
-        buffer[count++] = g_shared_buffer6[g_shared_buffer6_tail];
-        g_shared_buffer6_tail = (g_shared_buffer6_tail + 1) % SHARED_BUFFER_SIZE;
+    pthread_mutex_lock(&g_mutex4);
+    while (g_shared_buffer4_tail != g_shared_buffer4_head && count < size) {
+        buffer[count++] = g_shared_buffer4[g_shared_buffer4_tail];
+        g_shared_buffer4_tail = (g_shared_buffer4_tail + 1) % SHARED_BUFFER_SIZE;
     }
-    pthread_mutex_unlock(&g_mutex6);
+    pthread_mutex_unlock(&g_mutex4);
     if (count > 0) {
         printf("Device 2 (bus 2) received %d bytes: ", count);
         for (uint16_t i = 0; i < count; i++) {
@@ -281,47 +273,6 @@ uint16_t device3_bus_receive(uint8_t* buffer, uint16_t size) {
     pthread_mutex_unlock(&g_mutex3);
     if (count > 0) {
         printf("Device 3 received %d bytes: ", count);
-        for (uint16_t i = 0; i < count; i++) {
-            printf("%02X ", buffer[i]);
-        }
-        printf("\n");
-    }
-    return count;
-}
-
-// 设备4的总线发送函数（写入共享缓冲区5）
-void device4_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
-    (void)bus;
-    pthread_mutex_lock(&g_mutex5);
-    for (uint16_t i = 0; i < length; i++) {
-        uint16_t next_head = (g_shared_buffer5_head + 1) % SHARED_BUFFER_SIZE;
-        if (next_head != g_shared_buffer5_tail) {
-            g_shared_buffer5[g_shared_buffer5_head] = data[i];
-            g_shared_buffer5_head = next_head;
-        } else {
-            printf("Device 4: Buffer overflow, dropping data\n");
-            break;
-        }
-    }
-    pthread_mutex_unlock(&g_mutex5);
-    printf("Device 4 sent: ");
-    for (uint16_t i = 0; i < length; i++) {
-        printf("%02X ", data[i]);
-    }
-    printf("\n");
-}
-
-// 设备4的总线接收函数（从共享缓冲区6读取）
-uint16_t device4_bus_receive(uint8_t* buffer, uint16_t size) {
-    uint16_t count = 0;
-    pthread_mutex_lock(&g_mutex6);
-    while (g_shared_buffer6_tail != g_shared_buffer6_head && count < size) {
-        buffer[count++] = g_shared_buffer6[g_shared_buffer6_tail];
-        g_shared_buffer6_tail = (g_shared_buffer6_tail + 1) % SHARED_BUFFER_SIZE;
-    }
-    pthread_mutex_unlock(&g_mutex6);
-    if (count > 0) {
-        printf("Device 4 received %d bytes: ", count);
         for (uint16_t i = 0; i < count; i++) {
             printf("%02X ", buffer[i]);
         }

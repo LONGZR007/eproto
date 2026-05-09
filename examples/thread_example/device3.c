@@ -29,7 +29,6 @@ eproto_t* g_device3_eproto = NULL;
 
 // 设备3接收回调函数
 void device3_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
-    (void)bus;
     uint8_t encrypted = 0;
     uint8_t need_reply = 0;
     uint16_t payload_length = 0;
@@ -40,6 +39,33 @@ void device3_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_
         printf("%02X ", data[i]);
     }
     printf("\n");
+
+    if (encrypted && payload && payload_length > 0) {
+        uint8_t key = get_key_for_bus(source_address, bus->self_addr);
+        uint8_t* decrypted_payload = decrypt_data(payload, payload_length, key);
+        if (decrypted_payload) {
+            printf("Device 3: Decrypted payload: ");
+            for (uint16_t i = 0; i < payload_length; i++) {
+                printf("%02X ", decrypted_payload[i]);
+            }
+            printf("\n");
+
+            if (memcmp(decrypted_payload, "\x11\x22\x33\x44\x55", 5) == 0) {
+                printf("Device 3: TEST 4 VERIFIED - Encrypted data from device 1 via device 2 correctly decrypted!\n");
+            }
+            free(decrypted_payload);
+        }
+    } else if (payload && payload_length > 0) {
+        printf("Device 3: Plain payload: ");
+        for (uint16_t i = 0; i < payload_length; i++) {
+            printf("%02X ", payload[i]);
+        }
+        printf("\n");
+
+        if (memcmp(payload, "\x33\x44\x55\x66\x77", 5) == 0) {
+            printf("Device 3: TEST 3 VERIFIED - Plain data from device 1 via device 2 correctly received!\n");
+        }
+    }
 
     if (payload && payload_length > 0 && need_reply) {
         printf("Device 3: Protocol header - encrypted=%d, need_reply=%d\n", encrypted, need_reply);
