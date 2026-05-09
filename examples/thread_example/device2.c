@@ -263,13 +263,6 @@ void* device2_thread(void* arg) {
     }
     printf("%s: Target device 0x04 added successfully\n", data->device_name);
 
-    error = eproto_add_destination_device(&data->eproto_inst, 0x02, 0x04);
-    if (error != EPROTO_OK) {
-        printf("%s: Failed to add target device 0x04 to bus 2\n", data->device_name);
-        pthread_exit(NULL);
-    }
-    printf("%s: Target device 0x04 added to bus 2 successfully\n", data->device_name);
-
     // 创建接收线程和处理线程
     pthread_t receive_thread, process_thread;
 
