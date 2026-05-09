@@ -643,13 +643,22 @@ static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager
 static void eproto_process_protocol_ack_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame) {
     EPROTO_INFO_LOG("%s: Received protocol ACK\n", EPROTO_BUS_NAME(bus_mgr));
 
-    // 遍历正在发送的节点队列，查找匹配的包ID
+    // 检查ACK是否是对回复包的应答
+    uint8_t ack_for_reply = frame->packet_type & EPROTO_PACKET_TYPE_ACK_FOR_REPLY_FLAG;
+
+    // 遍历正在发送的节点队列，查找匹配的包ID和类型
     struct eproto_list_head* pos, *n;
     eproto_list_for_each_safe(pos, n, &bus_mgr->device_queues.sending_queue) {
         eproto_node_t* node = eproto_list_entry(pos, eproto_node_t, list);
-        if (node->packet_id == frame->packet_id) {
-            EPROTO_INFO_LOG("%s: It's an ACK for current sending packet %d\n", EPROTO_BUS_NAME(bus_mgr),
-                            node->packet_id);
+        
+        // 判断当前节点是否为回复包
+        uint8_t is_reply_node = (node->packet_type == EPROTO_PACKET_TYPE_USER_REPLY);
+        
+        // ACK类型必须与节点类型匹配
+        if (node->packet_id == frame->packet_id && ack_for_reply == is_reply_node) {
+            EPROTO_INFO_LOG("%s: It's an ACK for current sending packet %d (type match: %s)\n", 
+                           EPROTO_BUS_NAME(bus_mgr), node->packet_id,
+                           ack_for_reply ? "REPLY" : "SEND");
 
             // 检查是否是握手包的协议 ACK
 #if EPROTO_ENABLE_HANDSHAKE
@@ -672,7 +681,7 @@ static void eproto_process_protocol_ack_packet(eproto_t* eproto, eproto_bus_mana
                 // 从链表中移除节点
                 eproto_list_del(&node->list);
                 
-                // 判断用户是否需要回复包
+                // 判断用户是否需要回复包（仅对发送包有效，回复包不需要等待回复）
                 if (node->need_reply) {
                     // 用户需要回复，放入等待队列
                     EPROTO_INFO_LOG("%s: User needs reply, adding to wait queue\n", EPROTO_BUS_NAME(bus_mgr));
@@ -705,9 +714,10 @@ static void eproto_process_protocol_ack_packet(eproto_t* eproto, eproto_bus_mana
 
 // 处理用户回复包
 static void eproto_process_user_reply_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame) {
-    // 发送协议层应答包
+    // 发送协议层应答包（带回复包ACK标志）
     EPROTO_INFO_LOG("%s: Received user reply packet, sending protocol ACK\n", EPROTO_BUS_NAME(bus_mgr));
-    eproto_send_response(eproto, frame->src_addr, frame->packet_id, NULL, 0, EPROTO_PACKET_TYPE_PROTOCOL_ACK);
+    eproto_send_response(eproto, frame->src_addr, frame->packet_id, NULL, 0, 
+                        EPROTO_PACKET_TYPE_PROTOCOL_ACK | EPROTO_PACKET_TYPE_ACK_FOR_REPLY_FLAG);
 
     // 从等待队列中移除
     eproto_node_t* reply_node = eproto_packet_node_remove(&bus_mgr->device_queues.wait_queue, frame->packet_id);
