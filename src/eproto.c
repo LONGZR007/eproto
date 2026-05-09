@@ -536,9 +536,9 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
 
             EPROTO_INFO_LOG(
                 "%s: Received valid frame from %02X, packet ID: %d, "
-                "type: %s\n",
+                "type: 0x%02X\n",
                 EPROTO_BUS_NAME(bus_mgr), frame.src_addr, frame.packet_id,
-                eproto_packet_type_names[frame.packet_type & ~(EPROTO_PACKET_TYPE_RETRANSMIT_FLAG | EPROTO_PACKET_TYPE_HANDSHAKE_FLAG)]);
+                frame.packet_type);
 
             // 根据实际包类型处理
             if ((frame.packet_type & EPROTO_PACKET_TYPE_PROTOCOL_ACK) != 0) {
