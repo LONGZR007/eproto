@@ -40,8 +40,7 @@ static eproto_error_t eproto_handle_broadcast(eproto_t* eproto, uint8_t* data, u
                                               eproto_packet_callback_t callback, void* private_data, uint8_t need_reply);
 static void eproto_process_received_data(eproto_t* eproto);
 static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, uint8_t bus_index);
-static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame,
-                                            uint8_t is_retransmit, uint8_t is_handshake);
+static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame);
 static void eproto_process_protocol_ack_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame);
 static void eproto_process_user_reply_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame);
 static void eproto_process_parse_error(eproto_bus_manager_t* bus_mgr, eproto_frame_parser_error_t error);
@@ -65,11 +64,6 @@ static uint32_t eproto_find_min_timeout_timestamp(eproto_t* eproto);
 //   bit1: 1=协议确认包
 //   bit6: 1=握手包
 //   bit7: 1=重发包
-static const char* eproto_packet_type_names[] = {
-    "USER_SEND",    // bit0=0, 用户发送包
-    "USER_REPLY",   // bit0=1, 用户回复包
-    "PROTOCOL_ACK"  // bit1=1, 协议确认包
-};
 
 // ====================================
 // 初始化与销毁
