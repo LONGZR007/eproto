@@ -555,7 +555,7 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
              } else if ((actual_packet_type & EPROTO_PACKET_TYPE_USER_REPLY) != 0) {
                  eproto_process_user_reply_packet(eproto, bus_mgr, &frame);
              } else {
-                 eproto_process_user_send_packet(eproto, bus_mgr, &frame, is_retransmit, is_handshake);
+                 eproto_process_user_send_packet(eproto, bus_mgr, &frame);
              }
 
             // 释放解析结果
@@ -576,8 +576,10 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
 // ====================================
 
 // 处理用户发送包
-static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame,
-                                            uint8_t is_retransmit, uint8_t is_handshake) {
+static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame) {
+    uint8_t is_retransmit = frame->packet_type & EPROTO_PACKET_TYPE_RETRANSMIT_FLAG;
+    uint8_t is_handshake = frame->packet_type & EPROTO_PACKET_TYPE_HANDSHAKE_FLAG;
+    
     // 发送协议层应答包
     EPROTO_INFO_LOG("%s: Received user send packet, sending protocol ACK\n", EPROTO_BUS_NAME(bus_mgr));
     eproto_send_response(eproto, frame->src_addr, frame->packet_id, NULL, 0, EPROTO_PACKET_TYPE_PROTOCOL_ACK);
