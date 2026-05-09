@@ -29,15 +29,22 @@
 #include <stddef.h>
 #include "eproto_ring_buffer.h"
 
-#define EPROTO_PACKET_TYPE_RETRANSMIT_FLAG 0x80
+// 包类型按bit定义：
+// bit0: 1=用户回复包, 0=用户发送包
+// bit1: 1=协议确认包
+// bit6: 1=握手包
+// bit7: 1=重发包
+#define EPROTO_PACKET_TYPE_REPLY_FLAG 0x01
+#define EPROTO_PACKET_TYPE_ACK_FLAG 0x02
 #define EPROTO_PACKET_TYPE_HANDSHAKE_FLAG 0x40
-#define EPROTO_PACKET_TYPE_ACK_FOR_REPLY_FLAG 0x20
+#define EPROTO_PACKET_TYPE_RETRANSMIT_FLAG 0x80
 
-typedef enum {
-    EPROTO_PACKET_TYPE_USER_SEND = 0,
-    EPROTO_PACKET_TYPE_USER_REPLY,
-    EPROTO_PACKET_TYPE_PROTOCOL_ACK
-} eproto_packet_type_t;
+// 常用包类型组合
+#define EPROTO_PACKET_TYPE_USER_SEND (0)                              // 用户发送包
+#define EPROTO_PACKET_TYPE_USER_REPLY (EPROTO_PACKET_TYPE_REPLY_FLAG) // 用户回复包
+#define EPROTO_PACKET_TYPE_PROTOCOL_ACK (EPROTO_PACKET_TYPE_ACK_FLAG)  // 协议确认包
+
+typedef uint8_t eproto_packet_type_t;
 
 typedef struct eproto_frame {
     uint8_t header;
@@ -53,6 +60,11 @@ typedef struct eproto_frame {
 // 协议帧格式定义
 // 帧结构：| 帧头(1) | 版本号(1) | 长度(2) | 包类型(1) | 原地址(1) | 设备地址(1)
 // | 包ID(2) | 数据(n) | CRC(2) |
+// 包类型(1字节)按bit定义：
+//   bit0: 1=用户回复包, 0=用户发送包
+//   bit1: 1=协议确认包
+//   bit6: 1=握手包
+//   bit7: 1=重发包
 
 typedef enum {
     EPROTO_FRAME_PARSER_OK = 0,
