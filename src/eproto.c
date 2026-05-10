@@ -515,7 +515,7 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
             // 检查设备地址是否匹配
             if (frame.dst_addr != bus_mgr->bus.self_addr) {
                 // 根据包类型处理转发
-                if (frame.packet_type == EPROTO_PACKET_TYPE_PROTOCOL_ACK) {
+                if ((frame.packet_type & EPROTO_PACKET_TYPE_PROTOCOL_ACK) != 0) {
                     // 转发协议应答包
                     eproto_forward_protocol_ack(eproto, bus_mgr, &frame);
                 } else {
@@ -1262,7 +1262,7 @@ static void eproto_forward_protocol_ack(eproto_t* eproto, eproto_bus_manager_t* 
 static eproto_error_t eproto_send_frame(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, uint8_t src_addr,
                                         uint8_t dst_addr, uint16_t packet_id, uint8_t* data, uint16_t length,
                                         uint8_t packet_type) {
-    if (!bus_mgr || !eproto)
+    if (!bus_mgr || !eproto || !bus_mgr->bus.send)
         return EPROTO_ERROR_ROUTE_NOT_FOUND;
 
     uint16_t buffer_size = EPROTO_FRAME_HEADER_LENGTH + length;
