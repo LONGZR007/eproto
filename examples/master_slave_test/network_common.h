@@ -41,32 +41,17 @@
 #define DEFAULT_IP "127.0.0.1"
 #define DEFAULT_PORT 8888
 #define MAX_DATA_SIZE 1024
-#define MAX_CLIENTS 8
-
-typedef enum {
-    PROTOCOL_UDP,
-    PROTOCOL_TCP
-} network_protocol_t;
 
 typedef struct {
     int sockfd;
-    network_protocol_t protocol;
     char server_ip[64];
     uint16_t server_port;
     struct sockaddr_in server_addr;
-    int is_server;
-    fd_set read_fds;
-    int max_fd;
-    int client_fds[MAX_CLIENTS];
-    int client_count;
 } network_channel_t;
 
-int network_init_channel(network_channel_t* channel, network_protocol_t protocol, const char* ip, uint16_t port, int is_server);
+int network_init_channel(network_channel_t* channel, const char* ip, uint16_t port);
 int network_send_data(network_channel_t* channel, uint8_t* data, uint16_t length);
-int network_receive_data(network_channel_t* channel, uint8_t* data, uint16_t max_length, int* client_fd);
-int network_accept_client(network_channel_t* channel);
-int network_close_client(network_channel_t* channel, int client_fd);
+int network_receive_data(network_channel_t* channel, uint8_t* data, uint16_t max_length);
 void network_close_channel(network_channel_t* channel);
-int network_set_nonblocking(int sockfd);
 
 #endif  // NETWORK_COMMON_H

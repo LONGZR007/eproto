@@ -110,16 +110,19 @@ void mock_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* da
         case EPROTO_STATUS_MULTIPLE_CRC_ERRORS:
             printf("[M1] Status: Multiple CRC errors\n");
             break;
+#if EPROTO_ENABLE_HANDSHAKE
         case EPROTO_STATUS_HANDSHAKE_IN_PROGRESS:
             printf("[M1] Status: Handshake in progress\n");
             break;
         case EPROTO_STATUS_HANDSHAKE_SUCCESS:
             printf("[M1] Status: Handshake success\n");
             break;
+#endif
     }
 }
 
-void m1_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+void m1_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length)
+{
     (void)bus;
     printf("[M1] Received from device 0x%02X, packet ID: %d, data: ", source_address, packet_id);
     for (uint16_t i = 0; i < length; i++) {
@@ -130,6 +133,11 @@ void m1_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t pac
     g_last_source_address = source_address;
     g_last_packet_id = packet_id;
     g_needs_reply = 1;
+    
+    // 自动回复
+    uint8_t reply_data[] = {0xAA, 0xBB, 0xCC};
+    printf("[M1] Sending auto-reply to device 0x%02X\n", source_address);
+    eproto_send_user_reply(&g_eproto, source_address, packet_id, reply_data, sizeof(reply_data));
 }
 
 void m1_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length, void* private_data) {
@@ -157,38 +165,15 @@ void m1_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* 
     }
 }
 
-void m1_bus1_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
+void m1_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
     (void)bus;
-    printf("[M1] Bus1 sending to all slaves: ");
+    printf("[M1] Bus sending: ");
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
     }
     printf("\n");
 
-    for (int i = 0; i < g_network.client_count; i++) {
-        int fd = g_network.client_fds[i];
-        if (fd >= 0) {
-            network_send_to_client(&g_network, fd, data, length);
-        }
-    }
-}
-
-void m1_bus2_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
-    (void)bus;
-    printf("[M1] Bus2 sending: ");
-    for (uint16_t i = 0; i < length; i++) {
-        printf("%02X ", data[i]);
-    }
-    printf("\n");
-}
-
-void m1_bus3_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
-    (void)bus;
-    printf("[M1] Bus3 sending: ");
-    for (uint16_t i = 0; i < length; i++) {
-        printf("%02X ", data[i]);
-    }
-    printf("\n");
+    network_send_data(&g_network, data, length);
 }
 
 void* network_receive_thread(void* arg) {
@@ -198,14 +183,11 @@ void* network_receive_thread(void* arg) {
     printf("[M1] Network receive thread started\n");
 
     while (1) {
-        int client_fd = -1;
-        int received = network_receive_data(&g_network, rx_buffer, sizeof(rx_buffer), &client_fd);
+        int received = network_receive_data(&g_network, rx_buffer, sizeof(rx_buffer));
 
         if (received > 0) {
-            printf("[M1] Received %d bytes from network\n", received);
-
-            int bus_id = 0x01;
-            eproto_receive_data(&g_eproto, bus_id, rx_buffer, received);
+            // 所有设备都能收到所有消息，通过eProto协议地址过滤
+            eproto_receive_data(&g_eproto, 0x01, rx_buffer, received);
         } else if (received < 0) {
             printf("[M1] Network receive error, exiting\n");
             break;
@@ -238,9 +220,9 @@ void print_help(void) {
 
 int main(void) {
     printf("=== Master Device M1 ===\n");
-    printf("Network: TCP Server on %s:%d\n\n", SERVER_IP, SERVER_PORT);
+    printf("Network: UDP on %s:%d\n\n", SERVER_IP, SERVER_PORT);
 
-    if (network_init_channel(&g_network, PROTOCOL_TCP, SERVER_IP, SERVER_PORT, 1) < 0) {
+    if (network_init_channel(&g_network, SERVER_IP, SERVER_PORT) < 0) {
         printf("[M1] Failed to initialize network\n");
         return 1;
     }
@@ -263,10 +245,11 @@ int main(void) {
     }
     printf("[M1] eProto initialized\n");
 
+    // 总线1（连接所有从设备）
     uint8_t m1_rx_buffer1[256];
     eproto_bus_t bus1 = {
-        .self_addr = 0x01,
-        .send = m1_bus1_send,
+        .self_addr = 0x01,  // 主设备地址
+        .send = m1_bus_send,
         .rx_buffer = m1_rx_buffer1,
         .rx_buffer_size = sizeof(m1_rx_buffer1),
         .name = "m1_bus1",
@@ -280,51 +263,14 @@ int main(void) {
         printf("[M1] Failed to add bus 1\n");
         return 1;
     }
-    printf("[M1] Bus 1 (connected to S2) added\n");
+    printf("[M1] Bus 1 (connected to all slaves) added\n");
 
-    uint8_t m1_rx_buffer2[256];
-    eproto_bus_t bus2 = {
-        .self_addr = 0x02,
-        .send = m1_bus2_send,
-        .rx_buffer = m1_rx_buffer2,
-        .rx_buffer_size = sizeof(m1_rx_buffer2),
-        .name = "m1_bus2",
-        .user_data = NULL,
-        .status_callback = mock_status_callback,
-        .receive_callback = m1_receive_callback,
-        .forward_callback = NULL
-    };
-    error = eproto_add_bus(&g_eproto, &bus2);
-    if (error != EPROTO_OK) {
-        printf("[M1] Failed to add bus 2\n");
-        return 1;
-    }
-    printf("[M1] Bus 2 (connected to S3) added\n");
-
-    uint8_t m1_rx_buffer3[256];
-    eproto_bus_t bus3 = {
-        .self_addr = 0x03,
-        .send = m1_bus3_send,
-        .rx_buffer = m1_rx_buffer3,
-        .rx_buffer_size = sizeof(m1_rx_buffer3),
-        .name = "m1_bus3",
-        .user_data = NULL,
-        .status_callback = mock_status_callback,
-        .receive_callback = m1_receive_callback,
-        .forward_callback = NULL
-    };
-    error = eproto_add_bus(&g_eproto, &bus3);
-    if (error != EPROTO_OK) {
-        printf("[M1] Failed to add bus 3\n");
-        return 1;
-    }
-    printf("[M1] Bus 3 (connected to S4) added\n");
-
+    // 添加目标设备
     error = eproto_add_destination_device(&g_eproto, 0x01, 0x02);
     printf("[M1] Destination device S2 (0x02) added\n");
-    error = eproto_add_destination_device(&g_eproto, 0x02, 0x03);
+    error = eproto_add_destination_device(&g_eproto, 0x01, 0x03);
     printf("[M1] Destination device S3 (0x03) added\n");
-    error = eproto_add_destination_device(&g_eproto, 0x03, 0x04);
+    error = eproto_add_destination_device(&g_eproto, 0x01, 0x04);
     printf("[M1] Destination device S4 (0x04) added\n");
 
     pthread_t recv_thread, proto_thread;
@@ -334,13 +280,16 @@ int main(void) {
     printf("\n[M1] Ready! Waiting for slave connections...\n");
     print_help();
 
+    // 检查 stdin 是否可用（是否为终端）
+    int stdin_available = isatty(fileno(stdin));
+    
     char command[256];
     int stdin_fd = fileno(stdin);
     int flags = fcntl(stdin_fd, F_GETFL, 0);
     fcntl(stdin_fd, F_SETFL, flags | O_NONBLOCK);
 
     while (1) {
-        if (fgets(command, sizeof(command), stdin) != NULL) {
+        if (stdin_available && fgets(command, sizeof(command), stdin) != NULL) {
             command[strcspn(command, "\n")] = 0;
 
             if (strcmp(command, "quit") == 0) {
@@ -374,12 +323,9 @@ int main(void) {
                             }
                             printf("\n");
 
-                            for (int i = 0; i < g_network.client_count; i++) {
-                                int fd = g_network.client_fds[i];
-                                if (fd >= 0) {
-                                    eproto_send(&g_eproto, 0xFF, data, data_len, m1_send_callback, NULL, need_reply);
-                                }
-                            }
+                            eproto_send(&g_eproto, 0x02, data, data_len, m1_send_callback, NULL, need_reply);
+                            eproto_send(&g_eproto, 0x03, data, data_len, m1_send_callback, NULL, need_reply);
+                            eproto_send(&g_eproto, 0x04, data, data_len, m1_send_callback, NULL, need_reply);
                         }
                     }
                 }
@@ -449,6 +395,13 @@ int main(void) {
             } else if (strlen(command) > 0) {
                 printf("[M1] Unknown command: %s\n", command);
                 print_help();
+            }
+        } else if (!stdin_available) {
+            // 无 stdin 模式下，运行一段时间后自动退出
+            static int run_count = 0;
+            if (run_count++ > 1500) {  // 约15秒后退出
+                printf("[M1] Auto-exiting after timeout\n");
+                break;
             }
         }
         usleep(10000);

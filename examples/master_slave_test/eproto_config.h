@@ -55,6 +55,9 @@
 // 单个总线下最多支持的目标设备数量
 #define EPROTO_MAX_DESTINATION_DEVICES 16
 
+// 禁用握手功能
+#define EPROTO_ENABLE_HANDSHAKE 0
+
 // 超时时间计算系数
 #define EPROTO_TIMEOUT_FACTOR 1.5
 

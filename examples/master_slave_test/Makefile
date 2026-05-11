@@ -27,14 +27,14 @@ $(BINDIR):
 $(BINDIR)/master_m1: master_m1.c $(EPROTO_OBJS) $(LOCAL_OBJS)
 	$(CC) $(CFLAGS) -I$(INC_DIR) -I.. -o $@ $^ -pthread
 
-$(BINDIR)/slave_s2: slave_s2.c $(EPROTO_OBJS) $(LOCAL_OBJS)
-	$(CC) $(CFLAGS) -I$(INC_DIR) -I.. -o $@ $^ -pthread
+$(BINDIR)/slave_s2: slave.c $(EPROTO_OBJS) $(LOCAL_OBJS)
+	$(CC) $(CFLAGS) -I$(INC_DIR) -I.. -DSLAVE_ADDR=2 -o $@ $^ -pthread
 
-$(BINDIR)/slave_s3: slave_s3.c $(EPROTO_OBJS) $(LOCAL_OBJS)
-	$(CC) $(CFLAGS) -I$(INC_DIR) -I.. -o $@ $^ -pthread
+$(BINDIR)/slave_s3: slave.c $(EPROTO_OBJS) $(LOCAL_OBJS)
+	$(CC) $(CFLAGS) -I$(INC_DIR) -I.. -DSLAVE_ADDR=3 -o $@ $^ -pthread
 
-$(BINDIR)/slave_s4: slave_s4.c $(EPROTO_OBJS) $(LOCAL_OBJS)
-	$(CC) $(CFLAGS) -I$(INC_DIR) -I.. -o $@ $^ -pthread
+$(BINDIR)/slave_s4: slave.c $(EPROTO_OBJS) $(LOCAL_OBJS)
+	$(CC) $(CFLAGS) -I$(INC_DIR) -I.. -DSLAVE_ADDR=4 -o $@ $^ -pthread
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -I$(INC_DIR) -I.. -c $< -o $@

@@ -51,15 +51,15 @@ S4_PID=$!
 echo "Slave S4 started (PID: $S4_PID)"
 
 echo ""
-echo "All devices started. Waiting for test to complete..."
-echo ""
+    echo "All devices started. Waiting for test to complete..."
+    echo ""
 
-sleep 10
+    sleep 15
 
-echo "=========================================="
-echo "Test Results"
-echo "=========================================="
-echo ""
+    echo "=========================================="
+    echo "Test Results"
+    echo "=========================================="
+    echo ""
 
 echo "--- Master M1 Log ---"
 cat /tmp/master_m1.log
