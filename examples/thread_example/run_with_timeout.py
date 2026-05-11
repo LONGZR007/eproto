@@ -62,4 +62,4 @@ if __name__ == "__main__":
         exit(1)
     
     # 运行命令
-    run_with_timeout([executable])
+    run_with_timeout([executable], timeout=10)
