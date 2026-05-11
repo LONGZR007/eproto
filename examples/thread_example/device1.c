@@ -29,6 +29,11 @@ eproto_t* g_device1_eproto = NULL;
 
 // 设备1接收回调函数
 void device1_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
+    if (!bus || !data || length == 0) {
+        printf("Device 1: Invalid input in receive callback\n");
+        return;
+    }
+    
     uint8_t encrypted = 0;
     uint8_t need_reply = 0;
     uint16_t payload_length = 0;

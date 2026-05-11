@@ -334,6 +334,16 @@ eproto_error_t device2_forward_callback(eproto_bus_t* bus, uint8_t source_addr, 
     (void)bus;
     (void)private_data;
     
+    if (!data || length < PROTOCOL_HEADER_SIZE) {
+        printf("Device 2: Invalid input data in forward callback\n");
+        return EPROTO_ERROR_INVALID_ARGUMENT;
+    }
+    
+    if (!out_data || !out_length) {
+        printf("Device 2: Invalid output parameters in forward callback\n");
+        return EPROTO_ERROR_INVALID_ARGUMENT;
+    }
+    
     uint8_t encrypted = (data[0] & PROTOCOL_FLAG_ENCRYPTED) ? 1 : 0;
     
     printf("Device 2: Forward callback called, source bus: 0x%02X, dest bus: 0x%02X, encrypted: %d, length: %d\n", 
