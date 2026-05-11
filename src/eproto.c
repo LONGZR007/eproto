@@ -48,7 +48,9 @@ static void eproto_handle_retransmit(eproto_t* eproto, eproto_bus_manager_t* bus
 static void eproto_send_normal_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr);
 static void eproto_process_send_queue(eproto_t* eproto);
 static void eproto_process_wait_queue(eproto_t* eproto);
+#if EPROTO_ENABLE_HANDSHAKE
 static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr);
+#endif
 static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current_bus_mgr, eproto_frame_t* frame);
 static void eproto_forward_protocol_ack(eproto_t* eproto, eproto_bus_manager_t* current_bus_mgr, eproto_frame_t* frame);
 static eproto_error_t eproto_send_frame(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, uint8_t src_addr,
@@ -563,7 +565,9 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
 // 处理用户发送包
 static void eproto_process_user_send_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, eproto_frame_t* frame) {
     uint8_t is_retransmit = frame->packet_type & EPROTO_PACKET_TYPE_RETRANSMIT_FLAG;
+#if EPROTO_ENABLE_HANDSHAKE
     uint8_t is_handshake = frame->packet_type & EPROTO_PACKET_TYPE_HANDSHAKE_FLAG;
+#endif
     
     // 发送协议层应答包
     EPROTO_INFO_LOG("%s: Received user send packet, sending protocol ACK\n", EPROTO_BUS_NAME(bus_mgr));
