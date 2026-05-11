@@ -501,6 +501,7 @@ static void eproto_process_received_data(eproto_t* eproto) {
 
 // 处理单个总线的接收到的数据
 static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, uint8_t bus_index) {
+    (void)bus_index;  // 标记为未使用
     eproto_ring_buffer_t* rx_buffer = &bus_mgr->rx_buffer;
 
     if (eproto_ring_buffer_available(rx_buffer) > 0) {
@@ -1237,6 +1238,7 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
 // 直接发送协议应答包（用于转发）
 static void eproto_forward_protocol_ack(eproto_t* eproto, eproto_bus_manager_t* current_bus_mgr,
                                         eproto_frame_t* frame) {
+    (void)current_bus_mgr;  // 标记为未使用
     EPROTO_INFO_LOG(
         "%s: Protocol ACK for packet %d, destination %02X is not me, "
         "forwarding...\n",
