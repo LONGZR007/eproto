@@ -224,6 +224,7 @@ uint8_t* encrypt_data(uint8_t* data, uint16_t length, uint8_t key);
 uint8_t* decrypt_data(uint8_t* data, uint16_t length, uint8_t key);
 uint8_t get_key_for_bus(uint8_t source_addr, uint8_t dest_addr);
 
+#if EPROTO_ENABLE_FORWARD
 // 转发回调函数
 eproto_error_t device2_forward_callback(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr,
                                         uint8_t* data, uint16_t length,
@@ -233,5 +234,6 @@ eproto_error_t device2_forward_callback(eproto_bus_t* bus, uint8_t source_addr, 
 void device2_forward_post_func(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr,
                                 uint8_t* out_data, uint16_t out_length,
                                 void* private_data);
+#endif
 
 #endif  // COMMON_H

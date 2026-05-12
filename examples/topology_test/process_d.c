@@ -301,7 +301,9 @@ int main(void) {
         .user_data = NULL,
         .status_callback = mock_status_callback,
         .receive_callback = d_receive_callback,
+#if EPROTO_ENABLE_FORWARD
         .forward_callback = NULL
+#endif
     };
     error = eproto_add_bus(&g_eproto, &bus8);
     if (error != EPROTO_OK) {
@@ -321,7 +323,9 @@ int main(void) {
         .user_data = NULL,
         .status_callback = mock_status_callback,
         .receive_callback = d_receive_callback,
+#if EPROTO_ENABLE_FORWARD
         .forward_callback = NULL
+#endif
     };
     error = eproto_add_bus(&g_eproto, &bus9);
     if (error != EPROTO_OK) {
@@ -341,7 +345,9 @@ int main(void) {
         .user_data = NULL,
         .status_callback = mock_status_callback,
         .receive_callback = d_receive_callback,
+#if EPROTO_ENABLE_FORWARD
         .forward_callback = NULL
+#endif
     };
     error = eproto_add_bus(&g_eproto, &bus10);
     if (error != EPROTO_OK) {

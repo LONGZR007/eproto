@@ -424,7 +424,9 @@ void* device1_thread(void* arg) {
         .name = "device1_bus",
         .status_callback = mock_status_callback,
         .receive_callback = device1_receive_callback,
+#if EPROTO_ENABLE_FORWARD
         .forward_callback = NULL
+#endif
     };
     error = eproto_add_bus(&data->eproto_inst, &bus);
     if (error != EPROTO_OK) {
@@ -541,7 +543,9 @@ void* device2_thread(void* arg) {
         .name = "device2_bus",
         .status_callback = mock_status_callback,
         .receive_callback = device2_receive_callback,
+#if EPROTO_ENABLE_FORWARD
         .forward_callback = NULL
+#endif
     };
     error = eproto_add_bus(&data->eproto_inst, &bus);
     if (error != EPROTO_OK) {

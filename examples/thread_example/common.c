@@ -311,6 +311,7 @@ uint8_t get_key_for_bus(uint8_t source_addr, uint8_t dest_addr) {
     return 0;
 }
 
+#if EPROTO_ENABLE_FORWARD
 // 转发后处理回调函数
 void device2_forward_post_func(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr,
                               uint8_t* out_data, uint16_t out_length,
@@ -402,3 +403,4 @@ eproto_error_t device2_forward_callback(eproto_bus_t* bus, uint8_t source_addr, 
     
     return EPROTO_OK;
 }
+#endif

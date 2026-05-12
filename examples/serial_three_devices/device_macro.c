@@ -314,7 +314,9 @@ int main(int argc, char *argv[]) {
             .user_data = NULL,
             .status_callback = mock_status_callback,
             .receive_callback = device_receive_callback,
+#if EPROTO_ENABLE_FORWARD
             .forward_callback = NULL
+#endif
         };
         error = eproto_add_bus(&g_eproto, &bus);
         if (error != EPROTO_OK) {

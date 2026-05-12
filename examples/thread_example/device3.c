@@ -250,7 +250,9 @@ void* device3_thread(void* arg) {
         .user_data = NULL,
         .status_callback = mock_status_callback,
         .receive_callback = device3_receive_callback,
+#if EPROTO_ENABLE_FORWARD
         .forward_callback = NULL
+#endif
     };
     error = eproto_add_bus(&data->eproto_inst, &bus);
     if (error != EPROTO_OK) {

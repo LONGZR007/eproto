@@ -289,7 +289,9 @@ int main(void) {
         .user_data = NULL,
         .status_callback = mock_status_callback,
         .receive_callback = c_receive_callback,
+#if EPROTO_ENABLE_FORWARD
         .forward_callback = NULL
+#endif
     };
     error = eproto_add_bus(&g_eproto, &bus6);
     if (error != EPROTO_OK) {
@@ -309,7 +311,9 @@ int main(void) {
         .user_data = NULL,
         .status_callback = mock_status_callback,
         .receive_callback = c_receive_callback,
+#if EPROTO_ENABLE_FORWARD
         .forward_callback = NULL
+#endif
     };
     error = eproto_add_bus(&g_eproto, &bus7);
     if (error != EPROTO_OK) {
