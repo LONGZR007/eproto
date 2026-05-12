@@ -25,28 +25,27 @@
 #ifndef NETWORK_COMMON_H
 #define NETWORK_COMMON_H
 
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <sys/select.h>
+#include <errno.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 
-#define DEFAULT_IP "127.0.0.1"
-#define DEFAULT_PORT 8888
-#define MAX_DATA_SIZE 1024
+#define MULTICAST_IP "224.0.0.100"
+#define SERVER_PORT 8888
+#define MAX_DATA_SIZE 2048
 
 typedef struct {
     int sockfd;
+    struct sockaddr_in server_addr;
+    struct ip_mreq mreq;
     char server_ip[64];
     uint16_t server_port;
-    struct sockaddr_in server_addr;
 } network_channel_t;
 
 int network_init_channel(network_channel_t* channel, const char* ip, uint16_t port);

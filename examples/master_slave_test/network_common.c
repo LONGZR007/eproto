@@ -53,19 +53,32 @@ int network_init_channel(network_channel_t* channel, const char* ip, uint16_t po
         printf("Warning: Failed to set SO_REUSEPORT\n");
     }
 
-    // 设置socket地址
+    // 绑定到任意地址（INADDR_ANY）
     memset(&channel->server_addr, 0, sizeof(channel->server_addr));
     channel->server_addr.sin_family = AF_INET;
     channel->server_addr.sin_port = htons(port);
-    channel->server_addr.sin_addr.s_addr = inet_addr(ip);
+    channel->server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     // 绑定socket
     if (bind(channel->sockfd, (struct sockaddr*)&channel->server_addr, sizeof(channel->server_addr)) < 0) {
-        printf("Failed to bind socket to %s:%d: %s\n", ip, port, strerror(errno));
+        printf("Failed to bind socket: %s\n", strerror(errno));
         close(channel->sockfd);
         return -1;
     }
-    printf("UDP socket bound to %s:%d\n", ip, port);
+    printf("UDP socket bound to port %d (multicast)\n", port);
+
+    // 加入多播组
+    memset(&channel->mreq, 0, sizeof(channel->mreq));
+    channel->mreq.imr_multiaddr.s_addr = inet_addr(MULTICAST_IP);
+    channel->mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+    
+    if (setsockopt(channel->sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, 
+                   (char*)&channel->mreq, sizeof(channel->mreq)) < 0) {
+        printf("Failed to join multicast group: %s\n", strerror(errno));
+        close(channel->sockfd);
+        return -1;
+    }
+    printf("Joined multicast group %s\n", MULTICAST_IP);
 
     // 设置为非阻塞
     int flags = fcntl(channel->sockfd, F_GETFL, 0);
@@ -79,8 +92,12 @@ int network_send_data(network_channel_t* channel, uint8_t* data, uint16_t length
         return -1;
     }
 
-    // 发送到广播地址（所有绑定到相同地址和端口的设备都能收到）
-    struct sockaddr_in dest_addr = channel->server_addr;
+    // 发送到多播地址
+    struct sockaddr_in dest_addr;
+    memset(&dest_addr, 0, sizeof(dest_addr));
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(SERVER_PORT);
+    dest_addr.sin_addr.s_addr = inet_addr(MULTICAST_IP);
 
     int sent = sendto(channel->sockfd, data, length, 0,
                     (struct sockaddr*)&dest_addr, sizeof(dest_addr));
@@ -120,7 +137,10 @@ void network_close_channel(network_channel_t* channel) {
         return;
     }
 
+    // 离开多播组
     if (channel->sockfd >= 0) {
+        setsockopt(channel->sockfd, IPPROTO_IP, IP_DROP_MEMBERSHIP, 
+                   (char*)&channel->mreq, sizeof(channel->mreq));
         close(channel->sockfd);
     }
 

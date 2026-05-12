@@ -251,12 +251,12 @@ void* auto_send_thread(void* arg) {
 
 int main(void) {
     printf("=== Slave Device S%d ===\n", SLAVE_ADDR);
-    printf("Network: UDP on %s:%d\n\n", SERVER_IP, SERVER_PORT);
+    printf("Network: UDP Multicast on %s:%d\n\n", MULTICAST_IP, SERVER_PORT);
 
     // 等待一小段时间，确保主设备先启动
     usleep(500000);  // 0.5秒
 
-    if (network_init_channel(&g_network, SERVER_IP, SERVER_PORT) < 0) {
+    if (network_init_channel(&g_network, MULTICAST_IP, SERVER_PORT) < 0) {
         printf("[S%d] Failed to initialize network\n", SLAVE_ADDR);
         return 1;
     }

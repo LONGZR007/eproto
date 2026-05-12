@@ -220,9 +220,9 @@ void print_help(void) {
 
 int main(void) {
     printf("=== Master Device M1 ===\n");
-    printf("Network: UDP on %s:%d\n\n", SERVER_IP, SERVER_PORT);
+    printf("Network: UDP Multicast on %s:%d\n\n", MULTICAST_IP, SERVER_PORT);
 
-    if (network_init_channel(&g_network, SERVER_IP, SERVER_PORT) < 0) {
+    if (network_init_channel(&g_network, MULTICAST_IP, SERVER_PORT) < 0) {
         printf("[M1] Failed to initialize network\n");
         return 1;
     }
