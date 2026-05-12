@@ -1168,7 +1168,7 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
 
     // 查找目标设备所在的总线
     eproto_bus_manager_t* destination_bus_mgr = eproto_find_bus_by_destination(eproto, frame->dst_addr);
-    if (destination_bus_mgr) {
+    if (destination_bus_mgr && destination_bus_mgr != current_bus_mgr) {
         EPROTO_INFO_LOG("%s: Found destination bus for %02X, forwarding...\n", EPROTO_BUS_NAME(current_bus_mgr),
                         frame->dst_addr);
 
@@ -1238,15 +1238,19 @@ static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current
 // 直接发送协议应答包（用于转发）
 static void eproto_forward_protocol_ack(eproto_t* eproto, eproto_bus_manager_t* current_bus_mgr,
                                         eproto_frame_t* frame) {
-    (void)current_bus_mgr;  // 标记为未使用
-    EPROTO_INFO_LOG(
-        "%s: Protocol ACK for packet %d, destination %02X is not me, "
-        "forwarding...\n",
-        EPROTO_BUS_NAME(current_bus_mgr), frame->packet_id, frame->dst_addr);
-
     // 查找目标设备所在的总线
     eproto_bus_manager_t* destination_bus_mgr = eproto_find_bus_by_destination(eproto, frame->dst_addr);
+    
+    // 如果目标设备就在当前总线上，不需要转发
+    if (destination_bus_mgr == current_bus_mgr) {
+        EPROTO_INFO_LOG("%s: Protocol ACK for packet %d, destination %02X is on current bus, not forwarding\n",
+                        EPROTO_BUS_NAME(current_bus_mgr), frame->packet_id, frame->dst_addr);
+        return;
+    }
+    
     if (destination_bus_mgr) {
+        EPROTO_INFO_LOG("%s: Protocol ACK for packet %d, destination %02X is not me, forwarding...\n",
+                        EPROTO_BUS_NAME(current_bus_mgr), frame->packet_id, frame->dst_addr);
         EPROTO_INFO_LOG("%s: Found destination bus for %02X, forwarding protocol ACK\n",
                         EPROTO_BUS_NAME(current_bus_mgr), frame->dst_addr);
 
