@@ -45,9 +45,6 @@
 
 static eproto_t g_eproto;
 static network_channel_t g_network;
-static uint8_t g_last_source_address = 0;
-static uint16_t g_last_packet_id = 0;
-static int g_needs_reply = 0;
 static sem_t g_semaphore;
 static int g_semaphore_initialized = 0;
 
@@ -129,59 +126,18 @@ void mock_status_callback(eproto_bus_t* bus, eproto_status_t status, uint8_t* da
 
 void slave_receive_callback(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length) {
     (void)bus;
-    printf("[S%d] Received from device 0x%02X, packet ID: %d, data: ", SLAVE_ADDR, source_address, packet_id);
+    printf("[S%d] Received from master 0x%02X, packet ID: %d, data: ", SLAVE_ADDR, source_address, packet_id);
     for (uint16_t i = 0; i < length; i++) {
         printf("%02X ", data[i]);
     }
     printf("\n");
 
-    g_last_source_address = source_address;
-    g_last_packet_id = packet_id;
-    g_needs_reply = 1;
-
-    // 自动回复主设备
     uint8_t reply_data[3];
-    if (SLAVE_ADDR == 0x02) {
-        reply_data[0] = 0xAA;
-        reply_data[1] = 0xBB;
-        reply_data[2] = 0xCC;
-    } else if (SLAVE_ADDR == 0x03) {
-        reply_data[0] = 0xDD;
-        reply_data[1] = 0xEE;
-        reply_data[2] = 0xFF;
-    } else {
-        reply_data[0] = 0x11;
-        reply_data[1] = 0x22;
-        reply_data[2] = 0x33;
-    }
+    reply_data[0] = (SLAVE_ADDR * 0x10) & 0xFF;
+    reply_data[1] = ((SLAVE_ADDR + 1) * 0x10) & 0xFF;
+    reply_data[2] = ((SLAVE_ADDR + 2) * 0x10) & 0xFF;
+    printf("[S%d] Sending reply to master: %02X %02X %02X\n", SLAVE_ADDR, reply_data[0], reply_data[1], reply_data[2]);
     eproto_send_user_reply(&g_eproto, source_address, packet_id, reply_data, sizeof(reply_data));
-    printf("[S%d] Auto-reply sent to master\n", SLAVE_ADDR);
-}
-
-void slave_send_callback(eproto_send_status_t status, uint16_t packet_id, uint8_t* data, uint16_t length, void* private_data)
-{
-    (void)private_data;
-    switch (status) {
-        case EPROTO_SEND_SUCCESS:
-            printf("[S%d] Send success, packet ID: %d\n", SLAVE_ADDR, packet_id);
-            if (data && length > 0) {
-                printf("[S%d] Received response: ", SLAVE_ADDR);
-                for (uint16_t i = 0; i < length; i++) {
-                    printf("%02X ", data[i]);
-                }
-                printf("\n");
-            }
-            break;
-        case EPROTO_SEND_TIMEOUT:
-            printf("[S%d] Send timeout, packet ID: %d\n", SLAVE_ADDR, packet_id);
-            break;
-        case EPROTO_SEND_ERROR:
-            printf("[S%d] Send error, packet ID: %d\n", SLAVE_ADDR, packet_id);
-            break;
-        case EPROTO_SEND_BUSY:
-            printf("[S%d] Send busy, packet ID: %d\n", SLAVE_ADDR, packet_id);
-            break;
-    }
 }
 
 void slave_bus_send(eproto_bus_t* bus, uint8_t* data, uint16_t length) {
@@ -220,7 +176,7 @@ void* network_receive_thread(void* arg) {
 
 void* protocol_thread(void* arg) {
     (void)arg;
-    printf("[S%d] Protocol thread started\n", SLAVE_ADDR);
+    printf("[S%d] Protocol thread started (passive mode)\n", SLAVE_ADDR);
 
     while (1) {
         eproto_process(&g_eproto);
@@ -228,28 +184,9 @@ void* protocol_thread(void* arg) {
     return NULL;
 }
 
-void* auto_send_thread(void* arg) {
-    (void)arg;
-    // 等待一段时间后发送数据
-    unsigned int wait_time = SLAVE_ADDR * 1000000;  // S2: 2秒，S3: 3秒，S4: 4秒
-    usleep(wait_time);
-
-    printf("[S%d] Sending test data to master...\n", SLAVE_ADDR);
-    uint8_t test_data[5];
-    test_data[0] = (SLAVE_ADDR * 0x11) & 0xFF;
-    test_data[1] = (SLAVE_ADDR * 0x22) & 0xFF;
-    test_data[2] = (SLAVE_ADDR * 0x33) & 0xFF;
-    test_data[3] = (SLAVE_ADDR * 0x44) & 0xFF;
-    test_data[4] = (SLAVE_ADDR * 0x55) & 0xFF;
-    eproto_send(&g_eproto, MASTER_ADDR, test_data, sizeof(test_data), slave_send_callback, NULL, 1);
-
-    sleep(1);
-    printf("[S%d] Auto-send test completed\n", SLAVE_ADDR);
-
-    return NULL;
-}
-
 int main(void) {
+    setbuf(stdout, NULL);
+
     printf("=== Slave Device S%d ===\n", SLAVE_ADDR);
     printf("Network: UDP Multicast on %s:%d\n\n", MULTICAST_IP, SERVER_PORT);
 
@@ -301,17 +238,14 @@ int main(void) {
     error = eproto_add_destination_device(&g_eproto, SLAVE_ADDR, MASTER_ADDR);
     printf("[S%d] Destination device M1 (0x%02X) added\n", SLAVE_ADDR, MASTER_ADDR);
 
-    pthread_t recv_thread, proto_thread, send_thread;
+    pthread_t recv_thread, proto_thread;
     pthread_create(&recv_thread, NULL, network_receive_thread, NULL);
     pthread_create(&proto_thread, NULL, protocol_thread, NULL);
-    pthread_create(&send_thread, NULL, auto_send_thread, NULL);
 
-    printf("\n[S%d] Ready! Connected to master.\n", SLAVE_ADDR);
-    printf("[S%d] Will automatically send test data after startup.\n", SLAVE_ADDR);
+    printf("\n[S%d] Ready! Passive mode - waiting for master requests.\n", SLAVE_ADDR);
+    printf("[S%d] Use 'send <addr> 1 <data>' from master to request data.\n", SLAVE_ADDR);
 
-    pthread_join(send_thread, NULL);
-
-    sleep(5);
+    sleep(30);
 
     network_close_channel(&g_network);
     eproto_destroy(&g_eproto);

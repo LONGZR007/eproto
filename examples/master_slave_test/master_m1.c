@@ -219,6 +219,8 @@ void print_help(void) {
 }
 
 int main(void) {
+    setbuf(stdout, NULL);
+
     printf("=== Master Device M1 ===\n");
     printf("Network: UDP Multicast on %s:%d\n\n", MULTICAST_IP, SERVER_PORT);
 
@@ -280,16 +282,13 @@ int main(void) {
     printf("\n[M1] Ready! Waiting for slave connections...\n");
     print_help();
 
-    // 检查 stdin 是否可用（是否为终端）
-    int stdin_available = isatty(fileno(stdin));
-    
     char command[256];
     int stdin_fd = fileno(stdin);
     int flags = fcntl(stdin_fd, F_GETFL, 0);
     fcntl(stdin_fd, F_SETFL, flags | O_NONBLOCK);
 
     while (1) {
-        if (stdin_available && fgets(command, sizeof(command), stdin) != NULL) {
+        if (fgets(command, sizeof(command), stdin) != NULL) {
             command[strcspn(command, "\n")] = 0;
 
             if (strcmp(command, "quit") == 0) {
@@ -395,13 +394,6 @@ int main(void) {
             } else if (strlen(command) > 0) {
                 printf("[M1] Unknown command: %s\n", command);
                 print_help();
-            }
-        } else if (!stdin_available) {
-            // 无 stdin 模式下，运行一段时间后自动退出
-            static int run_count = 0;
-            if (run_count++ > 1500) {  // 约15秒后退出
-                printf("[M1] Auto-exiting after timeout\n");
-                break;
             }
         }
         usleep(10000);
