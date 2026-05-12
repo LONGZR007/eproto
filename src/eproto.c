@@ -51,8 +51,10 @@ static void eproto_process_wait_queue(eproto_t* eproto);
 #if EPROTO_ENABLE_HANDSHAKE
 static bool eproto_send_handshake_packet(eproto_t* eproto, eproto_bus_manager_t* bus_mgr);
 #endif
+#if EPROTO_ENABLE_FORWARD
 static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current_bus_mgr, eproto_frame_t* frame);
 static void eproto_forward_protocol_ack(eproto_t* eproto, eproto_bus_manager_t* current_bus_mgr, eproto_frame_t* frame);
+#endif
 static eproto_error_t eproto_send_frame(eproto_t* eproto, eproto_bus_manager_t* bus_mgr, uint8_t src_addr,
                                         uint8_t dst_addr, uint16_t packet_id, uint8_t* data, uint16_t length,
                                         uint8_t packet_type);
@@ -197,7 +199,9 @@ eproto_error_t eproto_add_bus(eproto_t* eproto, eproto_bus_t* bus) {
     eproto->bus_managers[manager_index].bus.name = bus->name;
     eproto->bus_managers[manager_index].bus.status_callback = bus->status_callback;
     eproto->bus_managers[manager_index].bus.receive_callback = bus->receive_callback;
+#if EPROTO_ENABLE_FORWARD
     eproto->bus_managers[manager_index].bus.forward_callback = bus->forward_callback;
+#endif
 
     // 初始化目标设备地址数组
     eproto->bus_managers[manager_index].destination_device_count = 0;
@@ -517,6 +521,7 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
         if (error == EPROTO_FRAME_PARSER_OK) {
             // 检查设备地址是否匹配
             if (frame.dst_addr != bus_mgr->bus.self_addr) {
+#if EPROTO_ENABLE_FORWARD
                 // 根据包类型处理转发
                 if ((frame.packet_type & EPROTO_PACKET_TYPE_PROTOCOL_ACK) != 0) {
                     // 转发协议应答包
@@ -525,6 +530,7 @@ static void eproto_process_bus_received_data(eproto_t* eproto, eproto_bus_manage
                     // 转发普通数据帧
                     eproto_forward_frame(eproto, bus_mgr, &frame);
                 }
+#endif
 
                 // 释放解析结果
                 eproto_frame_parser_free_result(&bus_mgr->parser, &frame);
@@ -1080,6 +1086,7 @@ eproto_error_t eproto_handshake(eproto_t* eproto, uint8_t bus_addr) {
 // 总线操作 - 转发处理
 // ====================================
 
+#if EPROTO_ENABLE_FORWARD
 // 转发数据帧
 static void eproto_forward_frame(eproto_t* eproto, eproto_bus_manager_t* current_bus_mgr, eproto_frame_t* frame) {
     EPROTO_INFO_LOG("%s: Frame addred to %02X, checking for forwarding...\n", EPROTO_BUS_NAME(current_bus_mgr),
@@ -1263,6 +1270,7 @@ static void eproto_forward_protocol_ack(eproto_t* eproto, eproto_bus_manager_t* 
                            frame->dst_addr);
     }
 }
+#endif
 
 // ====================================
 // 总线辅助 - 工具函数

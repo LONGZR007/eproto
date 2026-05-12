@@ -86,17 +86,19 @@ typedef enum {
 typedef void (*eproto_status_callback_t)(eproto_bus_t* bus, eproto_status_t status, uint8_t* data, uint16_t length);
 typedef void (*receive_callback_t)(eproto_bus_t* bus, uint8_t source_address, uint16_t packet_id, uint8_t* data, uint16_t length);
 
+#if EPROTO_ENABLE_FORWARD
 // 转发后处理回调函数类型
-typedef void (*eproto_forward_post_func_t)(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr, 
+typedef void (*eproto_forward_post_func_t)(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr,
                                          uint8_t* out_data, uint16_t out_length,
                                          void* private_data);
 
 // 转发回调函数类型
-typedef eproto_error_t (*eproto_forward_callback_t)(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr, 
-                                                   uint8_t* data, uint16_t length, 
-                                                   uint8_t** out_data, uint16_t* out_length,
-                                                   eproto_forward_post_func_t* post_func,
-                                                   void** private_data);
+typedef eproto_error_t (*eproto_forward_callback_t)(eproto_bus_t* bus, uint8_t source_addr, uint8_t dest_addr,
+                                                  uint8_t* data, uint16_t length,
+                                                  uint8_t** out_data, uint16_t* out_length,
+                                                  eproto_forward_post_func_t* post_func,
+                                                  void** private_data);
+#endif
 
 // 总线接口
 typedef struct eproto_bus_t {
@@ -108,7 +110,9 @@ typedef struct eproto_bus_t {
     void* user_data;                  // 用户自定义数据指针
     eproto_status_callback_t status_callback;  // 状态回调函数
     receive_callback_t receive_callback;       // 接收回调函数
+#if EPROTO_ENABLE_FORWARD
     eproto_forward_callback_t forward_callback;  // 转发回调函数
+#endif
 } eproto_bus_t;
 
 // 设备队列结构体
