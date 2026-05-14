@@ -18,7 +18,7 @@ libc.free.argtypes = [ctypes.c_void_p]
 libc.free.restype = None
 
 # Load shared library
-lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "libeproto.so")
+lib_path = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "libeproto.so"))
 lib = ctypes.CDLL(lib_path)
 
 # ==========================================
