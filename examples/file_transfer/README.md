@@ -1,6 +1,6 @@
 # eProto 串口文件传输示例
 
-基于 eProto 协议的串口文件传输程序。
+基于 eProto 协议的串口文件传输程序，支持本地编译和 ARM 交叉编译。
 
 ## 文件说明
 
@@ -9,18 +9,46 @@
 | `common_serial.h` / `common_serial.c` | 串口通信封装 |
 | `sender.c` | 文件发送程序 |
 | `receiver.c` | 文件接收程序 |
-| `Makefile.serial` | 串口版本的 Makefile |
+| `Makefile` | 支持本地和交叉编译的 Makefile |
+| `eproto_config.h` | eProto 协议配置 |
 
-## 编译
+## 本地编译 (x86)
+
+直接运行 `make`：
 
 ```bash
 cd /workspace/examples/file_transfer
-make -f Makefile.serial
+make clean
+make
 ```
 
-编译完成后会生成：
-- `file_transfer_sender` - 发送程序
-- `file_transfer_receiver` - 接收程序
+编译后会在 `bin/` 目录下生成：
+- `bin/file_transfer_sender` - 发送程序
+- `bin/file_transfer_receiver` - 接收程序
+
+## 交叉编译 (ARM)
+
+需要设置 `CROSS_COMPILE` 变量指定交叉工具链前缀。
+
+### 示例1: 使用 Linaro 工具链
+
+```bash
+CROSS_COMPILE=/workspace/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- make arm
+```
+
+### 示例2: 使用系统自带的 ARM 工具链
+
+```bash
+# 先安装工具链 (Ubuntu/Debian)
+sudo apt-get install gcc-arm-linux-gnueabihf
+
+# 交叉编译
+CROSS_COMPILE=arm-linux-gnueabihf- make arm
+```
+
+编译后会在 `bin-arm/` 目录下生成：
+- `bin-arm/file_transfer_sender`
+- `bin-arm/file_transfer_receiver`
 
 ## 使用方法
 
@@ -39,18 +67,18 @@ make -f Makefile.serial
 
 **终端1 - 启动接收程序：**
 ```bash
-./file_transfer_receiver /dev/ttyUSB0
+./bin/file_transfer_receiver /dev/ttyUSB0
 ```
 
 **终端2 - 启动发送程序：**
 ```bash
-./file_transfer_sender /dev/ttyUSB1
+./bin/file_transfer_sender /dev/ttyUSB1
 ```
 
 如果使用默认串口 `/dev/ttyUSB0`，可以直接运行：
 ```bash
-./file_transfer_receiver
-./file_transfer_sender
+./bin/file_transfer_receiver
+./bin/file_transfer_sender
 ```
 
 ### 虚拟串口测试（单台设备）
@@ -65,10 +93,10 @@ socat -d -d pty,raw,echo=0,link=/tmp/ttyV0 pty,raw,echo=0,link=/tmp/ttyV1
 然后分别在其他终端运行：
 ```bash
 # 终端2：接收
-./file_transfer_receiver /tmp/ttyV0
+./bin/file_transfer_receiver /tmp/ttyV0
 
 # 终端3：发送
-./file_transfer_sender /tmp/ttyV1
+./bin/file_transfer_sender /tmp/ttyV1
 ```
 
 ## 传输流程
@@ -101,6 +129,16 @@ static void create_test_file(void) {
 }
 ```
 
+## Makefile 目标
+
+| 目标 | 说明 |
+|------|------|
+| `all` (默认) | 本地编译 |
+| `arm` | ARM 交叉编译 |
+| `clean` | 清理本地编译产物 |
+| `clean-arm` | 清理交叉编译产物 |
+| `clean-all` | 清理所有编译产物 |
+
 ## 注意事项
 
 1. 确保串口设备有读写权限
@@ -110,3 +148,4 @@ static void create_test_file(void) {
 2. 使用时两个程序启动顺序不要求，但建议先启动接收方
 3. 传输的文件大小受限于可用内存
 4. 建议在发送数据块之间留足够的延迟
+5. 交叉编译前需确保工具链已正确安装
